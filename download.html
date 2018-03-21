@@ -1,0 +1,96 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+<meta content="yes" name="apple-mobile-web-app-capable">
+<meta content="black" name="apple-mobile-web-app-status-bar-style">
+<meta content="telephone=no" name="format-detection">
+<title>豪门百家乐</title>
+<meta content="豪门百家乐" name="keywords">
+<meta content="豪门百家乐" name="description">
+
+<script>
+ var exp2 = new Date();
+ var u = navigator.userAgent;
+ var isAndroid = u.indexOf('Android') > -1 || u.indexOf('Adr') > -1; //android终端
+ var isiOS = !!u.match(/\(i[^;]+;( U;)? CPU.+Mac OS X/); //ios终端
+ var dowurl= "./bjl8000.release.apk";
+ if(isiOS)
+ {
+      dowurl = "itms-services://?action=download-manifest&url=https://bxxCaro.github.io/manifest.plist" ;
+ }
+ 
+ //try{
+
+ //}catch(Exception e){}
+
+ 
+</script>
+<style>
+body{ margin:0; padding:0; border:0;}
+
+.mimg{
+	width:100%;
+	height:100%;
+}
+.mx{margin:0 auto;max-width:640px;clear:both;overflow:hidden;}
+@media only screen and (min-device-width : 220px) and (max-device-width : 340px) {
+		.mx{max-width:320px}
+	}
+	@media only screen and (min-device-width : 341px) and (max-device-width : 390px) {
+		.mx{max-width:370px}
+	}
+	@media only screen and (min-device-width : 391px) and (max-device-width : 670px) {
+		.mx{max-width:410px}
+	}
+</style>
+</head>
+<body>
+<div class="mx" id="dvios" onclick="down_url();" style="display:none;" ><img class="mimg"  src="./ios.jpg" alt="豪门百家乐"></div>
+<div  class="mx" id="dvAndroid" onclick="down_url();"  ><img class="mimg"  src="./android.jpg" alt="豪门百家乐"></div>
+
+<script>
+	function is_weixin(){
+		return /micromessenger/i.test(navigator.userAgent);
+	}
+	var oios = document.getElementById('dvios');
+    var oAndroid = document.getElementById('dvAndroid');
+	
+	function weixing_load(){
+		if( isiOS  ){
+			   oios.style.display ='block';
+               oAndroid.style.display ='none';
+			    window.location.href= dowurl ;
+                return false;
+		}
+		else{
+			 oios.style.display ='none';
+               oAndroid.style.display ='block';
+			
+		}
+	}
+	function UNweixing_load(){
+		oios.style.display ='none';
+        oAndroid.style.display ='none';
+
+	}
+    function load_pageUI(){
+		if(is_weixin()){
+			weixing_load();
+		}
+		
+		else{
+			 UNweixing_load();
+			window.location.href= dowurl ;
+	}
+  } 
+  function down_url(){
+	 window.location.href= dowurl ;
+  }
+
+load_pageUI();//load wexins
+//window.location.href= dowurl ;
+</script>
+</body>
+</html>
