@@ -95,7 +95,7 @@ function verifySign(req, res, next) {
     next();
 }
 function getHost(req) {
-    return url.format({protocol:req.protocol, hostname:req.hostname, port:server.address().port});
+    return url.format({protocol:req.protocol, host:req.headers.host});
 }
 
 // getDB(function (err, db, easym) {
@@ -104,7 +104,9 @@ function getHost(req) {
 	server.listen(argv.port, function () { console.log('Listening on ' + server.address().port) });
     // 购买支持
     var order={};
-    app.all('/test/pay', verifySign, httpf({ orderid: 'string', money:'number', perfer:'string', no_return: true }, function (orderid, money, perfer) {
+    app.all('/test/pay', verifySign, httpf({ orderid: 'string', money:'number', perfer:'?string', prefer:'?string', no_return: true }, function (orderid, money, perfer, prefer) {
+        // debugout(this.req);
+        prefer=prefer||perfer;
         order.id=orderid;
         order.money=money;
         this.res.send(`
