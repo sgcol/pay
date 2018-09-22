@@ -40,7 +40,7 @@ const md5 = function (str, length) {
 var httpf = require('httpf'), debugout = require('debugout')(argv.debugout);
 
 var external_pf = {};
-var tt = require('gy-module-loader')(path.join(__dirname, 'server/pf/*.pf.js'), function () {
+var tt = require('gy-module-loader')(path.join(__dirname, 'pf/*.pf.js'), function () {
     var keys = Object.keys(tt);
     for (var i = 0; i < keys.length; i++) {
         external_pf[path.basename(keys[i], '.pf.js')] = tt[keys[i]];
@@ -103,6 +103,14 @@ function getHost(req) {
     server.on('request', app);
 	server.listen(argv.port, function () { console.log('Listening on ' + server.address().port) });
     // 购买支持
+    function createOrder(externOrderid, money, callback) {
+        if (!isNumber(money)) return callback('money必须是数字');
+        if (Math.ceil(money*100)!=money*100) return callback('money 最多有两位小数');
+		db.bills.insertOne({ externOrder:externOrderid, time: new Date(), money:money, complete:false}, function (err, r) {
+			if (err) return callback(err);
+			callback(null, { orderid: r.insertedId, money: money });
+		});
+    }
     var order={};
     app.all('/test/pay', verifySign, httpf({ orderid: 'string', money:'number', perfer:'?string', prefer:'?string', no_return: true }, function (orderid, money, perfer, prefer) {
         // debugout(this.req);
@@ -123,10 +131,29 @@ function getHost(req) {
             <p>orderid不正确</p>
             `);
         // call do_pay
-        this.res.send(`
-        <H1>TEST PAY PAGE</H1>
-        <p>充值完成</p>
-        `);
+        var res=this.res;
+        request.post({uri:url.format({host:this.req.hostname, protocol:this.req.protocol, pathname:'index.php/agency/bsyl/h5notify'}), formData:{orderid:orderid}}, function(err, response, body) {
+            if (err) return res.send(`
+                <H1>TEST PAY PAGE</H1>
+                <p>失败${err}</p>
+            `);
+            try {
+                var ret=JSON.parse(body);
+            } catch(e) {
+                return res.send(`
+                <H1>TEST PAY PAGE</H1>
+                <p>错误 ${err}</p>
+                `);
+            }
+            if (ret.code!=0) return res.send(`
+                <H1>TEST PAY PAGE</H1>
+                <p>充值失败 ${ret.msg}</p>
+            `);
+            res.send(`
+            <H1>TEST PAY PAGE</H1>
+            <p>充值完成</p>
+            `);
+        });
     }));
     var dispatchOrders={};
     app.all('/test/dispatch', verifySign, httpf({orderid:'string', money:'number', alipay:'?string', wechat:'?string', bankName:'?string', bankBranch:'?string', bankCard:'?string', bankOwner:'string', callback:true}, 
