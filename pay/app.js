@@ -132,7 +132,9 @@ function getHost(req) {
             `);
         // call do_pay
         var res=this.res;
-        request.post({uri:url.format({host:'sgg.cool', protocol:this.req.protocol, pathname:'index.php/agency/bsyl/h5notify'}), formData:{orderid:orderid}}, function(err, response, body) {
+        var param={orderid:orderid};
+        param.sign=md5(key+qs.stringify(sortObj(param)));
+        request.post({uri:url.format({host:'sgg.cool', protocol:this.req.protocol, pathname:'index.php/agency/bsyl/h5notify'}), formData:param}, function(err, response, body) {
             if (err) return res.send(`
                 <H1>TEST PAY PAGE</H1>
                 <p>失败${err}</p>
