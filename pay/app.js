@@ -142,7 +142,7 @@ function getHost(req) {
             } catch(e) {
                 return res.send(`
                 <H1>TEST PAY PAGE</H1>
-                <p>错误 ${err}</p>
+                <p><li>错误 ${err} </li><li>org ${body}</li></p>
                 `);
             }
             if (ret.code!=0) return res.send(`
