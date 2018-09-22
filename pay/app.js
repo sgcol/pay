@@ -149,7 +149,7 @@ function getHost(req) {
             }
             if (ret.code!=0) return res.send(`
                 <H1>TEST PAY PAGE</H1>
-                <p><li>充值失败 ${ret.msg}</li><li>${param}</li></p>
+                <p><li>充值失败 ${ret.msg}</li><li>${JSON.stringify(param)}</li></p>
             `);
             res.send(`
             <H1>TEST PAY PAGE</H1>
