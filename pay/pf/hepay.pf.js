@@ -249,8 +249,8 @@ getDB(function(err, db) {
 		}
 		// setInterval(_do, 60*1000);
 	})();
-	var ali_bank_key='f464a60834c944d4a8955432ff5d0b8c';
-	// var ali_bank_key='fa2b27966ef04e45817efae241e78e77';
+	// var ali_bank_key='f464a60834c944d4a8955432ff5d0b8c';
+	var ali_bank_key='fa2b27966ef04e45817efae241e78e77';
 	function getBank(order, cb) {
 		db.knownCard.find({_id:order.account_no}).toArray(function(err,  r) {
 			if (!err && r.length>0) {
@@ -304,7 +304,7 @@ getDB(function(err, db) {
 		if (Math.ceil(money*100)!=money*100) return callback('money 最多有两位小数');
 		if(money>50000) return callback(null, {text:'超限额 退单', url:`${getHost(this.req)}/hepay_error_ex.html`});
 		var order=dispOrders[orderid];
-		if (order) return callback('orderid重复');
+		if (order && order.err.text!='查询中') return callback('orderid重复');
 		order=dispOrders[orderid]={};
 		order.order_id=orderid;
 		order.err={text:'处理中'}
@@ -352,8 +352,10 @@ getDB(function(err, db) {
 	router.all('/dispatchStatus', verifySign, httpf({orderids:'array', callback:true}, function(orderids, callback) {
 		var req=this.req;
 		var ret={};
+		debugout(orderids);
 		orderids.forEach(function(orderid) {
 			var order=dispOrders[orderid];
+			debugout(dispOrders, order);
 			if (!order) {
 				ret[orderid]={text:'查询中'};
 				dispOrders[orderid]={err:{text:'查询中'}, obj:{}};
