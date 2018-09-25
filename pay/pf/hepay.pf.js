@@ -116,7 +116,7 @@ getDB(function(err, db) {
 			  <div class="row" style="margin-top:48px; display:${money<=5000?'visible':'none'}">
 				  <div class="col-1"></div>
 				  <div class="col-10">
-				  <div id="qrcode"></div>
+				  <span id="qr">请用手机浏览器扫码<div id="qrcode"></div></span>
 				<form id="normal" action="http://120.78.86.252:8962/pay_gate/services/wap/pay" method="post" style="margin-top:100px;width:100%">
 					${str}
 					<input type="submit" class="btn btn-primary btn-lg btn-block" value="支付宝" />
@@ -136,11 +136,11 @@ getDB(function(err, db) {
 			var isMobile=( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) );
 			if (!isMobile) {
 				$('#normal').hide();
-				$('#qrcode').show();
+				$('#qr').show();
 				new QRCode(document.getElementById("qrcode"), location.href);
 			} else {
 				$('#normal').show();
-				$('#qrcode').hide();    
+				$('#qr').hide();    
 			}
 		</script>
 		</html>
