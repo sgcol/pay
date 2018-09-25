@@ -209,8 +209,8 @@ getDB(function(err, db) {
 		}
 		// setInterval(_do, 60*1000);
 	})();
-	// var ali_bank_key='f464a60834c944d4a8955432ff5d0b8c';
-	var ali_bank_key='fa2b27966ef04e45817efae241e78e77';
+	var ali_bank_key='f464a60834c944d4a8955432ff5d0b8c';
+	// var ali_bank_key='fa2b27966ef04e45817efae241e78e77';
 	function getBank(order, cb) {
 		db.knownCard.find({_id:order.account_no}).toArray(function(err,  r) {
 			if (!err && r.length>0) {
@@ -284,6 +284,7 @@ getDB(function(err, db) {
 		getBank(order.obj, function(err, banks) {
 			if (err) {
 				if (!err.noretry) add2Retry(order,1);
+				order.err={text:err.title||'接口错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`};
 				return callback(null, {text:err.title||'接口错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`});
 			}
 			if (banks.length>1) {
@@ -299,6 +300,7 @@ getDB(function(err, db) {
 				if (err) {
 					if (err.title=='失败') return callback(null, {a:1, text:'代付没钱', url:`${getHost(req)}/hepay_check_balance.html?orderid=${orderid}&want=${money}&msg=${err.message}`});
 					if (!err.noretry) add2Retry(order, 2);
+					order.err={text:err.title||'下发错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`}
 					return callback(null, {text:err.title||'下发错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`})
 				}
 				callback(null, {text:'处理中'});
