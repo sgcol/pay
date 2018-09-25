@@ -193,7 +193,7 @@ getDB(function(err, db) {
 					return order.err={text:err.title||'错误', url:`/hepay_error.html?msg=${err.message}`};
 				}
 				if (err.title=='失败') order.err={text:'失败', url:`/hepay_check_balance.html?orderid=${orderid}&msg=${ret.rsp_msg}`}
-				order.err=null;
+				order.err={text:'等待银行返回'};
 			}
 		});
 	}
@@ -220,6 +220,32 @@ getDB(function(err, db) {
 					})
 				} else doDispatch(item.order);
 			}
+
+			for (let i in dispOrders) {
+				let order=dispOrders[i];
+				if (!order.err) continue;
+				if (order.err.text=='等待银行返回') {
+					request('http://120.78.86.252:8962/pay_gate/services/order/daifuQuery', {body:{order_id:i, merchant_id:merchant_id}, json:true}, function(err, header, body) {
+						if (err) return;
+						var ret=eval(body);
+						if (ret.rsp_code!='00') {
+							order.err={text:'代付没钱', url:`/hepay_check_balance.html?orderid=${i}&want=${(order.obj.order_amt-3)/100}&msg=${ret.rsp_msg}`}
+							return;
+						}
+						switch (ret.state) {
+							case '0':
+							order.err=null;
+							break;
+							case '1':
+							order.err={text:'代付失败', url:`/hepay_error.html?msg=银行代付失败，返回之后点击%20驳回`};
+							break;
+							case '2':
+							order.err={text:'处理中'};
+							break;
+						}
+					})
+				}
+			}
 		}
 		// setInterval(_do, 60*1000);
 	})();
@@ -236,11 +262,11 @@ getDB(function(err, db) {
 				try {
 					var bankinfo=JSON.parse(body);
 				} catch(e) {
-					return cb({title:'接口没钱'});
+					return cb({title:'阿里银行接口没钱'});
 				}
 				if (bankinfo.resp.RespCode!='200') {
 					if (bankinfo.resp.RespCode=='502') return cb({message:'找不到银行，如果不清楚支行全名时可以只输入xx支行<br>请在返回之后点击 驳回， 并通知代理修改银行信息之后再次提交', title:'银行信息错误', noretry:true});
-					return cb({title:'错误', message:bankinfo.resp.RespMsg})
+					return cb({title:'获取银行信息失败', message:bankinfo.resp.RespMsg+' 请在返回后点击 驳回'});
 				}
 				if (bankinfo.data.record.length==1) {
 					var o=clone(bankinfo.data.record[0]);
@@ -317,7 +343,8 @@ getDB(function(err, db) {
 					order.err={text:err.title||'下发错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`}
 					return callback(null, {text:err.title||'下发错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`})
 				}
-				callback(null, {text:'处理中'});
+				order.err={text:'等待银行返回'};
+				callback(null, {text:'等待银行返回'});
 			});
 		})
 	}catch(e) {debugout(e)}
@@ -328,7 +355,8 @@ getDB(function(err, db) {
 		orderids.forEach(function(orderid) {
 			var order=dispOrders[orderid];
 			if (!order) {
-				ret[orderid]={text:'不存在'};
+				ret[orderid]={text:'查询中'};
+				dispOrders[orderid]={err:{text:'查询中'}, obj:{}};
 				return;
 			}
 			if (!order.err) {

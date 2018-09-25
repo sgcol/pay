@@ -238,7 +238,7 @@ getDB(function (err, db, easym) {
         var ret={};
         for (var i=0; i<orderids.length; i++) {
             var oid=orderids[i];
-            ret[oid]={text:dispatchOrders[oid]?'测试':'不存在'};
+            ret[oid]={text:dispatchOrders[oid]?'测试':'不存在', url:'http://baidu.com'};
         }
         return ret;
     }));
