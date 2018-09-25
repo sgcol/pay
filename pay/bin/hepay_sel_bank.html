@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <title>支付</title>
+</head>
+<body>
+  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  <div class="container-fluid">
+      <div class="row" style="background-color:#9ec9ec">
+            <div class="col-2"><a href="javascript:history.back()" style="font-size:30px; font-weight:bold; color:black; text-decoration:none;">&lt;</a></div>
+            <div class="col-10"><span id="title" class="right" style="float:right; margin-right:10px; font-size:30px; color:#ef0606">选择银行</span></div>
+      </div>
+      <div class="row" style="margin-top:48px; display:visible;">
+        <div class="col-1"></div>
+        <div class="col-10">
+          <div class="jumbotron jumbotron-fluid">
+              <h1 class="display-4">请选择银行</h1>
+              <p class="lead">用户所填信息：<span id="user_offer_bank"></span></p>
+              <p class="lead">选择之后点击付款，如果找不到银行请返回之后点击 驳回</p>
+          </div>
+          <div id="banks" class="list-group">
+          </div>
+          <div class="col-1"></div>
+      </div>
+      <a href="#" id="pay" class="btn btn-lg btn-block btn-primary" style="margin-top:40px">付款</a>
+      <a href="javascript:history.back()" class="btn btn-lg btn-block btn-outline-primary" style="margin-top:40px">返回</a>  
+  </div>
+</body>
+<script>
+  var sel_bank=null;
+  window.onload=function(){
+    var query = {};
+    location.search.substr(1).split("&").forEach(function (pair) {
+        if (pair === "") return;
+        var parts = pair.split("=");
+        query[parts[0]] = parts[1] &&
+            decodeURIComponent(parts[1].replace(/\+/g, " "));
+    });
+    if (query.bankName) $('#user_offer_bank').text(query.bankName+' '+query.bankBranch);
+    try {
+      var possibleBanks=JSON.parse(query.banks)
+    } catch(e) {
+      $('.jumbotron h1').text('出错了');
+      $('.jumbotron p')[0].innerText=e.message;
+      return;
+    }
+
+    for (var i=0; i<possibleBanks.length; i++) {
+      var bi=possibleBanks[i];
+      if (i==0) sel_bank=bi;
+      var item=$(`<a href="#" class="list-group-item list-group-item-action flex-column align-items-start ${i==0?'active':''}" data="${i}">
+                <div class="d-flex w-100 justify-content-between">
+                  <h5 class="mb-1">${bi.bank}</h5>
+                  <small>${i==0?'最可能':''}</small>
+                </div>
+                <p class="mb-1">${bi.lName}</p>
+                <small>cnaps ${bi.bankCode}</small>`);
+      $('#banks').append(item);
+    }
+    $('#banks a').on('click', function (e) {
+      e.preventDefault();
+      $('#banks a').removeClass('active');
+      $(this).addClass('active');
+      sel_bank=possibleBanks[Number($(this).attr('data'))];
+    });
+
+    $('#pay').on('click', function(e) {
+      e.preventDefault();
+      sel_bank.orderid=query.orderid;
+      $.ajax('/pf/hepay/pay_with_bank', {data:sel_bank});
+      history.back();
+    })
+  }
+
+
+</script>
+</html>

@@ -12,6 +12,7 @@ const server = require('http').createServer()
 , fs = require('fs')
 , subdirs = require('subdirs')
 , del = require('delete')
+, getDB=require('./db.js')
 , argv = require('yargs')
     .default('port', 80)
     .boolean('debugout')
@@ -40,12 +41,6 @@ const md5 = function (str, length) {
 var httpf = require('httpf'), debugout = require('debugout')(argv.debugout);
 
 var external_pf = {};
-var tt = require('gy-module-loader')(path.join(__dirname, 'pf/*.pf.js'), function () {
-    var keys = Object.keys(tt);
-    for (var i = 0; i < keys.length; i++) {
-        external_pf[path.basename(keys[i], '.pf.js')] = tt[keys[i]];
-    }
-});
 
 if (argv.debugout) {
     app.use(function (req, res, next) {
@@ -78,7 +73,7 @@ function isIPv4(str) {
 var Address6 = require('ip-address').Address6;
 
 const key='Qztbet4J8uznaBeP';
-function verifySign(req, res, next) {
+global.verifySign =function(req, res, next) {
     var _p=merge(req.query, req.body), sign=_p.sign;
     if (!sign) return res.send({err:'没有签名sign'});
 
@@ -94,23 +89,81 @@ function verifySign(req, res, next) {
     }
     next();
 }
-function getHost(req) {
+global.getHost=function(req) {
     return url.format({protocol:req.protocol, host:req.headers.host});
 }
 
-// getDB(function (err, db, easym) {
-    // if (err) return console.log(err);
+global.isNumeric=function(n) {
+    return !isNaN(parseFloat(n)) && isFinite(n);
+}
+
+getDB(function (err, db, easym) {
+    if (err) return console.log(err);
+    // init pfs
+    var tt = require('gy-module-loader')(path.join(__dirname, 'pf/*.pf.js'), function () {
+        var keys = Object.keys(tt);
+        for (var i = 0; i < keys.length; i++) {
+            external_pf[path.basename(keys[i], '.pf.js')] = tt[keys[i]];
+        }
+    });
     server.on('request', app);
 	server.listen(argv.port, function () { console.log('Listening on ' + server.address().port) });
     // 购买支持
     function createOrder(externOrderid, money, callback) {
-        if (!isNumber(money)) return callback('money必须是数字');
+        try {
+        if (!money || !isNumeric(money)) return callback('money必须是数字');
         if (Math.ceil(money*100)!=money*100) return callback('money 最多有两位小数');
-		db.bills.insertOne({ externOrder:externOrderid, time: new Date(), money:money, complete:false}, function (err, r) {
+		db.bills.insertOne({ externOrder:externOrderid, time: new Date(), money:money, completeTime:new Date(0), used:false}, function (err, r) {
 			if (err) return callback(err);
 			callback(null, { orderid: r.insertedId, money: money });
-		});
+        });
+    }catch(e) {debugout(e)}
     }
+    confirmOrder=function (orderid, money, callback) {
+        if (typeof money=='fucntion') {
+            callback=money;money=null;
+        }
+		var self = this;
+		var key = { _id: ObjectID(orderid) };
+		db.bills.find(key).limit(1).next(function (err, order) {
+			debugout('co, db ret', err, order);
+			if (err) return callback(err);
+			if (order == null) return callback('无此订单' + orderid);
+			if (order.used) return callback('订单已使用@' + order.used);
+			if (money != null && order.money != money) return callback('充值金额不对');
+			db.bills.updateOne(key, { $set: { used: true , completeTime:new Date()} }, function(err) {
+				debugout('upd reciept', err);
+            });
+            var param={orderid:orderid};
+            param.sign=md5(key+qs.stringify(sortObj(param)));
+            request.post({uri:url.format({host:'sgg.cool', pathname:'index.php/agency/bsyl/h5notify'}), formData:param}, function(err, response, body) {
+                if (err) return callback(err);
+                try {
+                    var ret=JSON.parse(body);
+                } catch(e) {
+                    return callback(e);
+                }
+                if (ret.code!=0) return callback(ret.msg);
+                callback(null);
+            });
+		})
+    }
+    global.intfCreateOrder=function(callback) {
+        return function(req, res) {
+            verifySign(req, res, function() {
+                debugout('verified');
+                httpf({ orderid: 'string', money:'number', perfer:'?string', prefer:'?string', no_return: true }, function (orderid, money, perfer, prefer) {
+                    debugout('recieved', orderid, money);
+                    prefer=prefer||perfer;
+                    createOrder(orderid, money, function(err, order) {
+                        if (err) return callback.call({req:req, res:res}, err);
+                        callback.call({req:req, res:res}, null, order.orderid, order.money, prefer);
+                    });
+                })(req, res);
+            })
+        }
+    }
+    if (!argv.debugout) return;
     var order={};
     app.all('/test/pay', verifySign, httpf({ orderid: 'string', money:'number', perfer:'?string', prefer:'?string', no_return: true }, function (orderid, money, perfer, prefer) {
         // debugout(this.req);
@@ -158,8 +211,8 @@ function getHost(req) {
         });
     }));
     var dispatchOrders={};
-    app.all('/test/dispatch', verifySign, httpf({orderid:'string', money:'number', alipay:'?string', wechat:'?string', bankName:'?string', bankBranch:'?string', bankCard:'?string', bankOwner:'string', callback:true}, 
-    function(orderid, money, alipay, wechat, bankName, bankBranch, bankCard, bankOwner, callback) {
+    app.all('/test/dispatch', verifySign, httpf({orderid:'string', money:'number', alipay:'?string', wechat:'?string', bankName:'?string', bankBranch:'?string', bankCard:'?string', bankOwner:'string', mobile:'string', callback:true}, 
+    function(orderid, money, alipay, wechat, bankName, bankBranch, bankCard, bankOwner, mobile, callback) {
         if (!argv.debugout) return callback({text:'only availble in debugout mode'});
         if (dispatchOrders[orderid]) return callback({text:'repeat orderid'})
         dispatchOrders[orderid]={
@@ -189,4 +242,4 @@ function getHost(req) {
         }
         return ret;
     }));
-// })
+})
