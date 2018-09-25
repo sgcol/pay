@@ -249,8 +249,8 @@ getDB(function(err, db) {
 		}
 		// setInterval(_do, 60*1000);
 	})();
-	// var ali_bank_key='f464a60834c944d4a8955432ff5d0b8c';
-	var ali_bank_key='fa2b27966ef04e45817efae241e78e77';
+	var ali_bank_key='f464a60834c944d4a8955432ff5d0b8c';
+	// var ali_bank_key='fa2b27966ef04e45817efae241e78e77';
 	function getBank(order, cb) {
 		db.knownCard.find({_id:order.account_no}).toArray(function(err,  r) {
 			if (!err && r.length>0) {
