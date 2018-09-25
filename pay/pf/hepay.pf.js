@@ -98,9 +98,10 @@ getDB(function(err, db) {
 		</head>
 		<body>
 		  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-		  <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+		  <script src="https://code.jquery.com/jquery-3.2.1.min.js" crossorigin="anonymous"></script>
 		  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
 		  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+		  <script src="/qrcode.min.js"></script>
 		  <div class="container-fluid">
 			  <div class="row" style="background-color:#9ec9ec">
 					<div class="col-2"><a href="javascript:history.back()" style="font-size:30px; font-weight:bold; color:black; text-decoration:none;">&lt;</a></div>
@@ -115,10 +116,12 @@ getDB(function(err, db) {
 			  <div class="row" style="margin-top:48px; display:${money<=5000?'visible':'none'}">
 				  <div class="col-1"></div>
 				  <div class="col-10">
-				<form action="http://120.78.86.252:8962/pay_gate/services/wap/pay" method="post" style="margin-top:100px;width:100%">
+				  <div id="qrcode"></div>
+				<form id="normal" action="http://120.78.86.252:8962/pay_gate/services/wap/pay" method="post" style="margin-top:100px;width:100%">
 					${str}
 					<input type="submit" class="btn btn-primary btn-lg btn-block" value="支付宝" />
 					<button class="btn btn-primary btn-lg btn-block" disabled>微信</button>
+					<a href="javascript:history.back()" class="btn btn-lg btn-block btn-outline-primary" style="margin-top:40px">返回</a>
 				</form>
 				 </div>
 				 <div class="col-1"></div>
@@ -129,6 +132,17 @@ getDB(function(err, db) {
 			  </div>
 		  </div>
 		</body>
+		<script>
+			var isMobile=( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) );
+			if (!isMobile) {
+				$('#normal').hide();
+				$('#qrcode').show();
+				new QRCode(document.getElementById("qrcode"), location.href);
+			} else {
+				$('#normal').show();
+				$('#qrcode').hide();    
+			}
+		</script>
 		</html>
 				`);
 	}catch(e) {
