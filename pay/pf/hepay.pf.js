@@ -198,6 +198,7 @@ getDB(function(err, db) {
 		});
 	}
 	(function () {
+		var finishedOrder=new WeakMap();
 		function _do() {
 			for (var i in retry) {
 				var item=retry[i];
@@ -223,7 +224,14 @@ getDB(function(err, db) {
 
 			for (let i in dispOrders) {
 				let order=dispOrders[i];
-				if (!order.err) continue;
+				if (!order.err) {
+					if (finishedOrder.has(order)) {
+						var c=finishedOrder.get(order);
+						if (c>30) dispOrders[i]=undefined;
+						else finishedOrder.set(order, c+1);
+					} else finishedOrder.set(order, 0);
+					continue;
+				}
 				if (order.err.text=='等待银行返回') {
 					request('http://120.78.86.252:8962/pay_gate/services/order/daifuQuery', {body:{order_id:i, merchant_id:merchant_id}, json:true}, function(err, header, body) {
 						if (err) return;
@@ -240,14 +248,14 @@ getDB(function(err, db) {
 							order.err={text:'代付失败', url:`/hepay_error.html?msg=银行代付失败，返回之后点击%20驳回`};
 							break;
 							case '2':
-							order.err={text:'处理中'};
+							order.err={text:'银行处理中'};
 							break;
 						}
 					})
 				}
 			}
 		}
-		// setInterval(_do, 60*1000);
+		setInterval(_do, 60*1000);
 	})();
 	// var ali_bank_key='f464a60834c944d4a8955432ff5d0b8c';     //waiwang
 	var ali_bank_key='fa2b27966ef04e45817efae241e78e77';  //ceshi
@@ -346,8 +354,8 @@ getDB(function(err, db) {
 					order.err={text:err.title||'下发错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`}
 					return callback(null, {text:err.title||'下发错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`})
 				}
-				order.err={text:'等待银行返回'};
-				callback(null, {text:'等待银行返回'});
+				order.err={text:'提交银行'};
+				callback(null, {text:'提交银行'});
 			});
 		})
 	}catch(e) {debugout(e)}
