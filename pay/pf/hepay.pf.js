@@ -229,7 +229,7 @@ getDB(function(err, db) {
 						if (err) return;
 						var ret=eval(body);
 						if (ret.rsp_code!='00') {
-							order.err={text:'代付没钱', url:`/hepay_check_balance.html?orderid=${i}&want=${(order.obj.order_amt-3)/100}&msg=${ret.rsp_msg}`}
+							order.err={text:'代付没钱', url:`/hepay_check_balance.html?orderid=${i}&want=${(order.obj.order_amt)/100}&msg=${ret.rsp_msg}`}
 							return;
 						}
 						switch (ret.state) {
@@ -249,8 +249,8 @@ getDB(function(err, db) {
 		}
 		// setInterval(_do, 60*1000);
 	})();
-	var ali_bank_key='f464a60834c944d4a8955432ff5d0b8c';
-	// var ali_bank_key='fa2b27966ef04e45817efae241e78e77';
+	// var ali_bank_key='f464a60834c944d4a8955432ff5d0b8c';     //waiwang
+	var ali_bank_key='fa2b27966ef04e45817efae241e78e77';  //ceshi
 	function getBank(order, cb) {
 		db.knownCard.find({_id:order.account_no}).toArray(function(err,  r) {
 			if (!err && r.length>0) {
@@ -310,7 +310,7 @@ getDB(function(err, db) {
 		order.err={text:'处理中'}
 		order.obj={
 			order_id:orderid,
-			order_amt:''+(money+3/*手续费*/)*100,
+			order_amt:''+(money/*手续费*/)*100,
 			account_no:bankCard,
 			bank_name:bankName,
 			account_name:bankOwner,

@@ -59,7 +59,7 @@
         query[parts[0]] = parts[1] &&
             decodeURIComponent(parts[1].replace(/\+/g, " "));
     });
-    $('#user_deposite').text(query.want);
+    $('#user_deposite').text(Number(query.want).toFixed(2));
     $.ajax('/pf/hepay/balance',{
       dataType: "JSON",
       success: function (ret) {
@@ -67,7 +67,7 @@
           for (var i=0; i<ret.message.length; i++) {
             var item=ret.message[i];
             if (item.biz_code=='1010') {
-              b=item.balance;
+              b=item.balance.toFixed(2);
               break;
             }
           }
