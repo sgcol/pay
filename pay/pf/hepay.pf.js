@@ -278,9 +278,9 @@ getDB(function(err, db) {
 	}
 	function dispatch(order, cb) {
 		(!order.sign) && makeSigned(order);
-		debugout(order);
+		debugout('dispatch', order);
 		request.post({uri:'http://120.78.86.252:8962/pay_gate/services/order/daifu', body:order, json:true}, function(err, headers, body) {
-			debugout(err, body);
+			debugout('dispatch ret', err, body);
 			if (err) {
 				err.title='网络故障'
 				return cb(err);
