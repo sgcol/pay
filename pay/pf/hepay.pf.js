@@ -26,7 +26,7 @@ function makeSigned(o, forceSign) {
 }
 /************hepay spec */
 function hepaySign(req, res, orderid, money, type, callback){
-	// debugout(this.req.headers);
+	debugout(req.headers);
 	if (req.headers['referer']) {
 		var header=url.parse(req.headers['referer']);
 		header.pathname=path.join(header.pathname, req.baseUrl, req.path);
@@ -42,8 +42,8 @@ function hepaySign(req, res, orderid, money, type, callback){
 		order_id:orderid,
 		merchant_id:merchant_id,
 		order_amt:''+money*100,
-		return_url:url.format(merge.recursive(true, header, {pathname: url.resolve(header.pathname, 'rc') })),
-		bg_url:url.format(merge.recursive(true, header, {pathname: url.resolve(header.pathname, 'pay') })),
+		return_url:url.format({protocol:req.protocol, host:req.headers.host, pathname: url.resolve(header.pathname, 'rc') }),
+		bg_url:url.format({protocol:req.protocol, host:req.headers.host, pathname: url.resolve(header.pathname, 'pay') }),
 		biz_code:supportedMethod[type]
 	};
 	o.sign=signObj(o);
@@ -58,7 +58,7 @@ getDB(function(err, db) {
 		res.send({err:err});
 	});
 	router.all('/pay', httpf({order_id:'string', order_amt:'number', state:'number', sign:'string', callback:true}, function(orderid, amount, state, sign, callback) {
-		debugout(this.req.body, this.req.query);
+		debugout('3rd pay', this.req.body, this.req.query);
 		try {
 			if (state!=0) return callback(null, httpf.text('ok'));
 			var self=this;
@@ -192,14 +192,15 @@ getDB(function(err, db) {
 					add2Retry(order, 2);
 					return order.err={text:err.title||'错误', url:`/hepay_error.html?msg=${err.message}`};
 				}
-				if (err.title=='失败') order.err={text:'失败', url:`/hepay_check_balance.html?orderid=${orderid}&msg=${ret.rsp_msg}`}
-				order.err={text:'等待银行返回'};
+				if (err.message=='余额不足') order.err={text:'失败', url:`/hepay_check_balance.html?orderid=${orderid}&msg=${ret.rsp_msg}`}
+				order.err={text:'提交银行'};
 			}
 		});
 	}
 	(function () {
 		var finishedOrder=new WeakMap();
 		function _do() {
+			debugout('retry list', retry);
 			for (var i in retry) {
 				var item=retry[i];
 				if (!item) continue;
@@ -232,7 +233,7 @@ getDB(function(err, db) {
 					} else finishedOrder.set(order, 0);
 					continue;
 				}
-				if (order.err.text=='等待银行返回') {
+				if (order.err.text=='提交银行') {
 					request('http://120.78.86.252:8962/pay_gate/services/order/daifuQuery', {body:{order_id:i, merchant_id:merchant_id}, json:true}, function(err, header, body) {
 						if (err) return;
 						var ret=eval(body);
@@ -346,7 +347,8 @@ getDB(function(err, db) {
 			order.obj.bank_code=name2code[bi.bank];
 			dispatch(order.obj, function(err) {
 				if (err) {
-					if (err.title=='失败') {
+					if (err.message=='余额不足') {
+						add2Retry(order, 2);
 						order.err={text:'代付没钱', url:`${getHost(req)}/hepay_check_balance.html?orderid=${orderid}&want=${money}&msg=${err.message}`};
 						return callback(null, {a:1, text:'代付没钱', url:`${getHost(req)}/hepay_check_balance.html?orderid=${orderid}&want=${money}&msg=${err.message}`});
 					}
