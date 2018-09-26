@@ -307,7 +307,7 @@ getDB(function(err, db) {
 		if (order && order.err.text!='查询中') return callback('orderid重复');
 		order=dispOrders[orderid]={};
 		order.order_id=orderid;
-		order.err={text:'处理中'}
+		order.err={text:'收到订单'}
 		order.obj={
 			order_id:orderid,
 			order_amt:''+(money/*手续费*/)*100,
