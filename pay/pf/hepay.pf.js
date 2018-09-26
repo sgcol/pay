@@ -338,7 +338,10 @@ getDB(function(err, db) {
 			order.obj.bank_code=name2code[bi.bank];
 			dispatch(order.obj, function(err) {
 				if (err) {
-					if (err.title=='失败') return callback(null, {a:1, text:'代付没钱', url:`${getHost(req)}/hepay_check_balance.html?orderid=${orderid}&want=${money}&msg=${err.message}`});
+					if (err.title=='失败') {
+						order.err={text:'代付没钱', url:`${getHost(req)}/hepay_check_balance.html?orderid=${orderid}&want=${money}&msg=${err.message}`};
+						return callback(null, {a:1, text:'代付没钱', url:`${getHost(req)}/hepay_check_balance.html?orderid=${orderid}&want=${money}&msg=${err.message}`});
+					}
 					if (!err.noretry) add2Retry(order, 2);
 					order.err={text:err.title||'下发错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`}
 					return callback(null, {text:err.title||'下发错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`})
