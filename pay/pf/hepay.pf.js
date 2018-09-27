@@ -26,7 +26,6 @@ function makeSigned(o, forceSign) {
 }
 /************hepay spec */
 function hepaySign(req, res, orderid, money, type, callback){
-	debugout(req.headers);
 	if (req.headers['referer']) {
 		var header=url.parse(req.headers['referer']);
 		header.pathname=path.join(header.pathname, req.baseUrl, req.path);
@@ -57,7 +56,7 @@ getDB(function(err, db) {
 	if (err) return router.use(function(req,res) {
 		res.send({err:err});
 	});
-	router.all('/pay', httpf({order_id:'string', order_amt:'number', state:'number', sign:'string', callback:true}, function(orderid, amount, state, sign, callback) {
+	router.post('/pay', httpf({order_id:'string', order_amt:'number', state:'number', sign:'string', callback:true}, function(orderid, amount, state, sign, callback) {
 		debugout('3rd pay', this.req.body, this.req.query);
 		try {
 			if (state!=0) return callback(null, httpf.text('ok'));

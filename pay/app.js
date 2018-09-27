@@ -13,6 +13,7 @@ const server = require('http').createServer()
 , subdirs = require('subdirs')
 , del = require('delete')
 , getDB=require('./db.js')
+, ObjectID = require('mongodb').ObjectID
 , argv = require('yargs')
     .default('port', 80)
     .boolean('debugout')
@@ -135,9 +136,9 @@ getDB(function (err, db, easym) {
 			db.bills.updateOne(key, { $set: { used: true , completeTime:new Date()} }, function(err) {
 				debugout('upd reciept', err);
             });
-            var param={orderid:orderid};
+            var param={orderid:order.externOrderid};
             param.sign=md5(key+qs.stringify(sortObj(param)));
-            request.post({uri:url.format({host:'sgg.cool', pathname:'index.php/agency/bsyl/h5notify'}), formData:param}, function(err, response, body) {
+            request.post({uri:url.format({protocol:'http:', host:'sgg.cool', pathname:'index.php/agency/bsyl/h5notify'}), formData:param}, function(err, response, body) {
                 debugout('confirm, http ret', err, body);
                 if (err) return callback(err);
                 try {
