@@ -114,10 +114,11 @@ getDB(function (err, db, easym) {
         try {
         if (!money || !isNumeric(money)) return callback('money必须是数字');
         if (Math.ceil(money*100)!=money*100) return callback('money 最多有两位小数');
-		db.bills.insertOne({ _id:externOrderid, externOrder:externOrderid, time: new Date(), money:money, completeTime:new Date(0), used:false}, function (err, r) {
-            debugout('createOrder', err, r);
-            if (err) return callback(err);
-            if (r.insertedCount!=1) return callback('重复订单');
+		db.bills.insertOne({ _id:externOrderid, externOrder:externOrderid, time: new Date(), money:money, completeTime:new Date(0), used:false}, {w:1}, function (err, r) {
+            if (err) {
+                if (r.insertedCount!=1) return callback('重复订单');
+                return callback(err);
+            }
 			callback(null, { orderid: r.insertedId, money: money });
         });
     }catch(e) {debugout(e)}
