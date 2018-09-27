@@ -443,8 +443,8 @@ router.all('/balance', httpf({callback:true}, function(callback) {
 router.all('/payback',function(req, res) {
 	res.send({err:'not impl'});
 })
-router.all('/verifyQuxian', verifySign, httpf({time:'string', sign:'string'}, function(time, sign) {
-	return 'ok';
-} ))
+router.all('/verifyQuxian', verifySign, function(req, res) {
+	res.send({result:'ok'});
+} )
 
 module.exports=router;
