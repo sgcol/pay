@@ -11,7 +11,8 @@ if (argv.dev) {
 	merchant_id='227776058148130816'; merchant_key='34ca94d5e5b34abf97cb583e2c915cf9';	// test version
 	ali_bank_key='fa2b27966ef04e45817efae241e78e77';  // test version
 } else {
-	merchant_id='230062403746926592'; merchant_key='a69357b4837d87bd642e6b1e9acf7ad7'; // formal edition
+	// merchant_id='230062403746926592'; merchant_key='a69357b4837d87bd642e6b1e9acf7ad7'; // formal edition
+	merchant_id='227776058148130816'; merchant_key='34ca94d5e5b34abf97cb583e2c915cf9';	// test version
 	ali_bank_key='f464a60834c944d4a8955432ff5d0b8c';     // formal edition
 }
 
