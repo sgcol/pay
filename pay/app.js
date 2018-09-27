@@ -128,8 +128,8 @@ getDB(function (err, db, easym) {
             callback=money;money=null;
         }
 		var self = this;
-		var key = { _id: orderid };
-		db.bills.find(key).limit(1).next(function (err, order) {
+		var dbkey = { _id: orderid };
+		db.bills.find(dbkey).limit(1).next(function (err, order) {
 			debugout('co, db ret', err, order);
 			if (err) return callback(err);
 			if (order == null) return callback('无此订单' + orderid);
@@ -193,6 +193,7 @@ getDB(function (err, db, easym) {
         var res=this.res;
         var param={orderid:orderid};
         param.sign=md5(key+qs.stringify(sortObj(param)));
+        debugout(param);
         request.post({uri:url.format({host:'sgg.cool', protocol:this.req.protocol, pathname:'index.php/agency/bsyl/h5notify'}), formData:param}, function(err, response, body) {
             if (err) return res.send(`
                 <H1>TEST PAY PAGE</H1>
