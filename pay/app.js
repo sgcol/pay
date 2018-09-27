@@ -114,8 +114,10 @@ getDB(function (err, db, easym) {
         try {
         if (!money || !isNumeric(money)) return callback('money必须是数字');
         if (Math.ceil(money*100)!=money*100) return callback('money 最多有两位小数');
-		db.bills.insertOne({ externOrder:externOrderid, time: new Date(), money:money, completeTime:new Date(0), used:false}, function (err, r) {
-			if (err) return callback(err);
+		db.bills.insertOne({ _id:externOrderid, externOrder:externOrderid, time: new Date(), money:money, completeTime:new Date(0), used:false}, function (err, r) {
+            debugout('createOrder', err, r);
+            if (err) return callback(err);
+            if (r.insertedCount!=1) return callback('重复订单');
 			callback(null, { orderid: r.insertedId, money: money });
         });
     }catch(e) {debugout(e)}
@@ -126,17 +128,17 @@ getDB(function (err, db, easym) {
             callback=money;money=null;
         }
 		var self = this;
-		var key = { _id: ObjectID(orderid) };
+		var key = { _id: orderid };
 		db.bills.find(key).limit(1).next(function (err, order) {
 			debugout('co, db ret', err, order);
 			if (err) return callback(err);
 			if (order == null) return callback('无此订单' + orderid);
-			if (order.used) return callback('订单已使用@' + order.used);
+			if (order.used) return callback('订单已使用@' + order.completeTime);
 			if (money != null && order.money != money) return callback('充值金额不对');
 			db.bills.updateOne(key, { $set: { used: true , completeTime:new Date()} }, function(err) {
 				debugout('upd reciept', err);
             });
-            var param={orderid:order.externOrderid};
+            var param={orderid:order.externOrder};
             param.sign=md5(key+qs.stringify(sortObj(param)));
             request.post({uri:url.format({protocol:'http:', host:'sgg.cool', pathname:'index.php/agency/bsyl/h5notify'}), formData:param}, function(err, response, body) {
                 debugout('confirm, http ret', err, body);
