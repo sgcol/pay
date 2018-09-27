@@ -56,7 +56,7 @@ getDB(function(err, db) {
 	if (err) return router.use(function(req,res) {
 		res.send({err:err});
 	});
-	router.post('/pay', httpf({order_id:'string', order_amt:'number', state:'number', sign:'string', callback:true}, function(orderid, amount, state, sign, callback) {
+	router.all('/pay', httpf({order_id:'string', order_amt:'number', state:'number', sign:'string', callback:true}, function(orderid, amount, state, sign, callback) {
 		debugout('3rd pay', this.req.body, this.req.query);
 		try {
 			if (state!=0) return callback(null, httpf.text('ok'));
