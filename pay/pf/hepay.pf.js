@@ -62,7 +62,11 @@ getDB(function(err, db) {
 		try {
 			if (state!=0) return callback(null, httpf.text('ok'));
 			var self=this;
-			if (signObj(this.req.body)!=sign) return callback(null, httpf.text('sign err'));
+			if (signObj(this.req.body)!=sign) {
+				var ret='sign err';
+				if (argv.debugout) ret +=' wanted:'+signObj(this.req.body);
+				return callback(null, httpf.text(ret));
+			}
 			confirmOrder(orderid, amount/100, function(err) {
 				try {
 					if (err) {

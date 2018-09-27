@@ -21,7 +21,7 @@ const server = require('http').createServer()
 
 // const getDB = require('./server/db.js'), ObjectID = require('mongodb').ObjectID;;
 var db = null;
-confirmOrder = function () {
+global.confirmOrder = function () {
     var cb = arguments[arguments.length - 1];
     cb('db is not inited');
 }
@@ -119,7 +119,7 @@ getDB(function (err, db, easym) {
         });
     }catch(e) {debugout(e)}
     }
-    confirmOrder=function (orderid, money, callback) {
+    global.confirmOrder=function (orderid, money, callback) {
         debugout('confirmOrder', orderid, money);
         if (typeof money=='fucntion') {
             callback=money;money=null;
