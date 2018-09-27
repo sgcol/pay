@@ -120,6 +120,7 @@ getDB(function (err, db, easym) {
     }catch(e) {debugout(e)}
     }
     confirmOrder=function (orderid, money, callback) {
+        debugout('confirmOrder', orderid, money);
         if (typeof money=='fucntion') {
             callback=money;money=null;
         }
@@ -137,6 +138,7 @@ getDB(function (err, db, easym) {
             var param={orderid:orderid};
             param.sign=md5(key+qs.stringify(sortObj(param)));
             request.post({uri:url.format({host:'sgg.cool', pathname:'index.php/agency/bsyl/h5notify'}), formData:param}, function(err, response, body) {
+                debugout('confirm, http ret', err, body);
                 if (err) return callback(err);
                 try {
                     var ret=JSON.parse(body);
