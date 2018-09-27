@@ -135,9 +135,6 @@ getDB(function (err, db, easym) {
 			if (order == null) return callback('无此订单' + orderid);
 			if (order.used) return callback('订单已使用@' + order.completeTime);
 			if (money != null && order.money != money) return callback('充值金额不对');
-			db.bills.updateOne(key, { $set: { used: true , completeTime:new Date()} }, function(err) {
-				debugout('upd reciept', err);
-            });
             var param={orderid:order.externOrder};
             param.sign=md5(key+qs.stringify(sortObj(param)));
             debugout(param);
@@ -151,6 +148,9 @@ getDB(function (err, db, easym) {
                 }
                 if (ret.code!=0) return callback(ret.msg);
                 callback(null);
+                db.bills.updateOne(key, { $set: { used: true , completeTime:new Date()} }, function(err) {
+                    debugout('upd reciept', err);
+                });
             });
 		})
     }
