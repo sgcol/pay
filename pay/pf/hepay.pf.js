@@ -6,7 +6,14 @@ var httpf=require('httpf'), path=require('path'), merge=require('gy-merge');
 var getDB=require('../db.js'), ObjectID = require('mongodb').ObjectID;
 var _=require('lodash'),async=require('async'), request=require('request');
 
-const merchant_id='227776058148130816', merchant_key='34ca94d5e5b34abf97cb583e2c915cf9';
+if (argv.dev) {
+	const merchant_id='227776058148130816', merchant_key='34ca94d5e5b34abf97cb583e2c915cf9';	// test version
+	const ali_bank_key='fa2b27966ef04e45817efae241e78e77';  // test version
+} else {
+	const merchant_id='230062403746926592', merchant_key='a69357b4837d87bd642e6b1e9acf7ad7'; // formal edition
+	const ali_bank_key='f464a60834c944d4a8955432ff5d0b8c';     // formal edition
+}
+
 function combineObj(o) {
 	var r='';
 	for (var k in o) {
@@ -261,8 +268,7 @@ getDB(function(err, db) {
 		}
 		setInterval(_do, 60*1000);
 	})();
-	// var ali_bank_key='f464a60834c944d4a8955432ff5d0b8c';     //waiwang
-	var ali_bank_key='fa2b27966ef04e45817efae241e78e77';  //ceshi
+
 	function getBank(order, cb) {
 		db.knownCard.find({_id:order.account_no}).toArray(function(err,  r) {
 			if (!err && r.length>0) {
