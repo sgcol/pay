@@ -50,8 +50,8 @@ function hepaySign(req, res, orderid, money, type, callback){
 		order_id:orderid,
 		merchant_id:merchant_id,
 		order_amt:''+money*100,
-		return_url:url.format({protocol:req.protocol, host:req.headers.host, pathname: url.resolve(header.pathname, 'rc') }),
-		bg_url:url.format({protocol:req.protocol, host:req.headers.host, pathname: url.resolve(header.pathname, 'pay') }),
+		return_url:url.format({protocol:req.protocol, host:req.headers.host, pathname: '/pf/hepay/rc' }),
+		bg_url:url.format({protocol:req.protocol, host:req.headers.host, pathname: '/pf/hepay/pay' }),
 		biz_code:supportedMethod[type]
 	};
 	o.sign=signObj(o);
