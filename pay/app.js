@@ -140,6 +140,7 @@ getDB(function (err, db, easym) {
             });
             var param={orderid:order.externOrder};
             param.sign=md5(key+qs.stringify(sortObj(param)));
+            debugout(param);
             request.post({uri:url.format({protocol:'http:', host:'sgg.cool', pathname:'index.php/agency/bsyl/h5notify'}), formData:param}, function(err, response, body) {
                 debugout('confirm, http ret', err, body);
                 if (err) return callback(err);
