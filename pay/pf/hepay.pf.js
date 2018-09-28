@@ -388,6 +388,7 @@ getDB(function(err, db) {
 		var ret={};
 		debugout(orderids);
 		orderids.forEach(function(orderid) {
+			var orgOrderid=orderid;
 			orderid+=dispatchOrderBias;
 			var order=dispOrders[orderid];
 			debugout(dispOrders, order);
@@ -401,7 +402,7 @@ getDB(function(err, db) {
 				return;
 			}
 			if (order.err.url && order.err.url.indexOf('http')!=0) order.err.url=getHost(req)+order.err.url;
-			ret[orderid]=order.err;
+			ret[orgOrderid]=order.err;
 		});
 		callback(null, ret);
 	}))
