@@ -273,7 +273,7 @@ getDB(function(err, db) {
 				}
 			}
 		}
-		setInterval(_do, 60*1000);
+		setInterval(_do, 3*1000);
 	})();
 
 	function getBank(order, cb) {
