@@ -373,6 +373,11 @@ getDB(function(err, db) {
 						order.err={text:'代付没钱', url:`${getHost(req)}/hepay_check_balance.html?orderid=${orderid}&want=${money}&msg=${err.message}`};
 						return callback(null, {a:1, text:'代付没钱', url:`${getHost(req)}/hepay_check_balance.html?orderid=${orderid}&want=${money}&msg=${err.message}`});
 					}
+					if (err.message=='订单号重复') {
+						order.err={text:'提交银行'};
+						callback(null, {text:'提交银行'});
+						return;
+					}
 					if (!err.noretry) add2Retry(order, 2);
 					order.err={text:err.title||'下发错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`}
 					return callback(null, {text:err.title||'下发错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`})
