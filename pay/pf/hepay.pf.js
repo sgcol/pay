@@ -274,7 +274,7 @@ getDB(function(err, db) {
 				}
 			}
 		}
-		setInterval(_do, 3*1000);
+		setInterval(_do, 60*1000);
 	})();
 
 	function getBank(order, cb) {
@@ -320,6 +320,7 @@ getDB(function(err, db) {
 				debugout(ret, 'failed');
 				return cb({title:'失败', message:ret.rsp_msg});
 			}
+			if (ret.rsp_msg=='代付失败') return cb({title:'失败', message:ret.rsp_msg});
 			cb(null);
 		});
 	}
