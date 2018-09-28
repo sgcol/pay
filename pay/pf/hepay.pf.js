@@ -394,14 +394,12 @@ getDB(function(err, db) {
 	router.all('/dispatchStatus', verifySign, httpf({orderids:'array', callback:true}, function(orderids, callback) {
 		var req=this.req;
 		var ret={};
-		debugout(orderids);
 		orderids.forEach(function(orderid) {
 			var orgOrderid=orderid;
 			orderid+=dispatchOrderBias;
 			var order=dispOrders[orderid];
-			debugout(dispOrders, order);
 			if (!order) {
-				ret[orderid]={text:'查询中'};
+				ret[orgOrderid]={text:'查询中'};
 				dispOrders[orderid]={err:{text:'查询中'}, obj:{}};
 				return;
 			}
