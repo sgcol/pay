@@ -15,6 +15,7 @@ if (argv.dev) {
 	merchant_id='227776058148130816'; merchant_key='34ca94d5e5b34abf97cb583e2c915cf9';	// test version
 	ali_bank_key='f464a60834c944d4a8955432ff5d0b8c';     // formal edition
 }
+const dispatchOrderBias='32ff5d0b8c';
 
 function combineObj(o) {
 	var r='';
@@ -238,6 +239,9 @@ getDB(function(err, db) {
 			for (let i in dispOrders) {
 				let order=dispOrders[i];
 				if (!order.err) {
+					if (order.userSpec) {
+						db.knownCard.updateOne({_id:order.obj.account_no}, order.obj, {upsert:true},function(){});
+					}
 					if (finishedOrder.has(order)) {
 						var c=finishedOrder.get(order);
 						if (c>30) dispOrders[i]=undefined;
@@ -323,6 +327,7 @@ getDB(function(err, db) {
         if (!money || !isNumeric(money)) return callback('money必须是数字');
 		if (Math.ceil(money*100)!=money*100) return callback('money 最多有两位小数');
 		if(money>50000) return callback(null, {text:'超限额 退单', url:`${getHost(this.req)}/hepay_error_ex.html`});
+		orderid+=dispatchOrderBias;
 		var order=dispOrders[orderid];
 		if (order && order.err.text!='查询中') return callback('orderid重复');
 		order=dispOrders[orderid]={};
@@ -348,6 +353,7 @@ getDB(function(err, db) {
 				return callback(null, {text:err.title||'接口错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`});
 			}
 			if (banks.length>1) {
+				order.err={text:'选择银行', url:`${getHost(req)}/hepay_sel_bank.html?banks=${JSON.stringify(bankInfo.data.record)}&bankName=${bankName}&bankBranch=${bankBranch}&orderid=${orderid}`};
 				return callback(null, {text:'选择银行', url:`${getHost(req)}/hepay_sel_bank.html?banks=${JSON.stringify(bankInfo.data.record)}&bankName=${bankName}&bankBranch=${bankBranch}&orderid=${orderid}`});
 			}
 			var bi=banks[0];
@@ -356,6 +362,10 @@ getDB(function(err, db) {
 			order.obj.bank_firm_no=bi.bankCode;
 			order.obj.bank_name=bi.bank;
 			order.obj.bank_code=name2code[bi.bank];
+			if (!order.obj.bank_code) {
+				order.err={text:'不支持的银行', url:`${getHost(req)}/hepay_error_bankname.html?bank=${bi.bank}`};
+				return callback(null, {text:'不支持的银行', url:`${getHost(req)}/hepay_error_bankname.html?bank=${bi.bank}`});
+			}
 			dispatch(order.obj, function(err) {
 				if (err) {
 					if (err.message=='余额不足') {
@@ -378,6 +388,7 @@ getDB(function(err, db) {
 		var ret={};
 		debugout(orderids);
 		orderids.forEach(function(orderid) {
+			orderid+=dispatchOrderBias;
 			var order=dispOrders[orderid];
 			debugout(dispOrders, order);
 			if (!order) {
@@ -406,6 +417,7 @@ getDB(function(err, db) {
 			order.obj.bank_name=bank;
 			order.obj.bank_code=name2code[bank];
 		}
+		order.userSpec=true;
 		doDispatch(order.obj);
 	}));
 	var _count=0;
@@ -414,6 +426,18 @@ getDB(function(err, db) {
 		_count++;
 		doPay.call(this, null, ''+new Date().getTime()+_count, money);
 	}));
+	router.all('/getBank', httpf({card:'?string', branch:'?string', callback:true}, function(card, branch, callback) {
+		if (!card) return callback();
+		getBank({account_no:card, bank_firm_name:branch||''}, callback);
+	}))
+	router.all('/getPrevBank', httpf({callback:true}, function(callback) {
+		db.knownCard.find({_id:'adminCard'}).limit(1).toArray(callback);
+	}))
+	router.all('/withdraw', httpf({time:'string', sign:'string', card:'string', name:'string', bank:'string', branch:'string', callback:true},
+	function(time, sign, card, name, bank, branch, callback) {
+		if (md5(key+time)!=sign) return callback('sign err');
+
+	}))
 });
 
 router.all('/balance', httpf({callback:true}, function(callback) {
@@ -440,11 +464,7 @@ router.all('/balance', httpf({callback:true}, function(callback) {
 		callback(null, r);
 	});
 }));
-router.all('/payback',function(req, res) {
-	res.send({err:'not impl'});
-})
-router.all('/verifyQuxian', verifySign, function(req, res) {
-	res.send({result:'ok'});
-} )
+
+
 
 module.exports=router;
