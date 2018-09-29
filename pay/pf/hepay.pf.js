@@ -334,7 +334,7 @@ getDB(function(err, db) {
 				return realDispatch(order, cb);
 			}
 			if (ret.rsp_code!='00') {
-				debugout(ret, 'failed');
+				if (rsp_msg=='订单不存在') return realDispatch(order, cb);
 				return cb({title:'失败', message:ret.rsp_msg});
 			}
 			if (ret.state=='1') return cb({title:'失败', message:ret.rsp_msg, noretry:true});
@@ -488,7 +488,6 @@ router.all('/balance', httpf({callback:true}, function(callback) {
 		callback(null, r);
 	});
 }));
-
 
 
 module.exports=router;
