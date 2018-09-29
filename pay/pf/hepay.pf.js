@@ -302,11 +302,8 @@ getDB(function(err, db) {
 			})
 		})
 	}
-	function dispatch(order, cb) {
-		(!order.sign) && makeSigned(order);
-		debugout('dispatch', order);
+	function realDispatch(order, cb) {
 		request.post({uri:'http://120.78.86.252:8962/pay_gate/services/order/daifu', body:order, json:true}, function(err, headers, body) {
-			debugout('dispatch ret', err, body);
 			if (err) {
 				err.title='网络故障'
 				return cb(err);
@@ -320,7 +317,26 @@ getDB(function(err, db) {
 				debugout(ret, 'failed');
 				return cb({title:'失败', message:ret.rsp_msg});
 			}
-			if (ret.rsp_msg=='代付失败') return cb({title:'失败', message:ret.rsp_msg});
+			if (ret.state=='1') return cb({title:'失败', message:ret.rsp_msg, noretry:true});
+			cb(null);
+		});
+	}
+	function dispatch(order, cb) {
+		(!order.sign) && makeSigned(order);
+		debugout('dispatch', order);
+		request('http://120.78.86.252:8962/pay_gate/services/order/daifuQuery', {body:{order_id:i, merchant_id:merchant_id}, json:true}, function(err, header, body) {
+			if (err) return realDispatch(order, cb);
+			if (!body) return realDispatch(order, cb);
+			try {
+				var ret=eval(body);
+			} catch(e) {
+				return realDispatch(order, cb);
+			}
+			if (ret.rsp_code!='00') {
+				debugout(ret, 'failed');
+				return cb({title:'失败', message:ret.rsp_msg});
+			}
+			if (ret.state=='1') return cb({title:'失败', message:ret.rsp_msg, noretry:true});
 			cb(null);
 		});
 	}
