@@ -334,7 +334,7 @@ getDB(function(err, db) {
 				return realDispatch(order, cb);
 			}
 			if (ret.rsp_code!='00') {
-				if (rsp_msg=='订单不存在') return realDispatch(order, cb);
+				if (ret.rsp_msg=='订单不存在') return realDispatch(order, cb);
 				return cb({title:'失败', message:ret.rsp_msg});
 			}
 			if (ret.state=='0') return cb(null, 'success');
