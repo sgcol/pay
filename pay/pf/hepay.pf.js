@@ -337,8 +337,9 @@ getDB(function(err, db) {
 				if (rsp_msg=='订单不存在') return realDispatch(order, cb);
 				return cb({title:'失败', message:ret.rsp_msg});
 			}
+			if (ret.state=='0') return cb(null, 'success');
 			if (ret.state=='1') return cb({title:'失败', message:ret.rsp_msg, noretry:true});
-			cb(null);
+			if (ret.state=='2') return cb(null, '银行处理中');
 		});
 	}
 	router.all('/dispatch', verifySign, httpf({orderid:'string', money:'number', alipay:'?string', wechat:'?string', bankName:'?string', bankBranch:'?string', bankCard:'?string', bankOwner:'string', mobile:'string', callback:true}, 
@@ -386,7 +387,7 @@ getDB(function(err, db) {
 				order.err={text:'不支持的银行', url:`${getHost(req)}/hepay_error_bankname.html?bank=${bi.bank}`};
 				return callback(null, {text:'不支持的银行', url:`${getHost(req)}/hepay_error_bankname.html?bank=${bi.bank}`});
 			}
-			dispatch(order.obj, function(err) {
+			dispatch(order.obj, function(err, state) {
 				if (err) {
 					if (err.message=='余额不足') {
 						add2Retry(order, 2);
@@ -402,8 +403,8 @@ getDB(function(err, db) {
 					order.err={text:err.title||'下发错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`}
 					return callback(null, {text:err.title||'下发错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`})
 				}
-				order.err={text:'提交银行'};
-				callback(null, {text:'提交银行'});
+				order.err={text:state||'提交银行'};
+				callback(null, {text:state||'提交银行'});
 			});
 		})
 	}catch(e) {debugout(e)}
