@@ -11,8 +11,8 @@ if (argv.dev) {
 	merchant_id='227776058148130816'; merchant_key='34ca94d5e5b34abf97cb583e2c915cf9';	// test version
 	ali_bank_key='fa2b27966ef04e45817efae241e78e77';  // test version
 } else {
-	// merchant_id='230062403746926592'; merchant_key='a69357b4837d87bd642e6b1e9acf7ad7'; // formal edition
-	merchant_id='227776058148130816'; merchant_key='34ca94d5e5b34abf97cb583e2c915cf9';	// test version
+	merchant_id='230062403746926592'; merchant_key='a69357b4837d87bd642e6b1e9acf7ad7'; // formal edition
+	// merchant_id='227776058148130816'; merchant_key='34ca94d5e5b34abf97cb583e2c915cf9';	// test version
 	ali_bank_key='f464a60834c944d4a8955432ff5d0b8c';     // formal edition
 }
 const dispatchOrderBias='32ff5d0b8c';
@@ -390,8 +390,8 @@ getDB(function(err, db) {
 				if (err) {
 					if (err.message=='余额不足') {
 						add2Retry(order, 2);
-						order.err={text:'代付没钱', url:`${getHost(req)}/hepay_check_balance.html?orderid=${orderid}&want=${money}&msg=${err.message}`};
-						return callback(null, {a:1, text:'代付没钱', url:`${getHost(req)}/hepay_check_balance.html?orderid=${orderid}&want=${money}&msg=${err.message}`});
+						order.err={text:'代付没钱', url:`${getHost(req)}/hepay_check_balance.html?orderid=${orderid}&want=${money}&msg=${err.message}`, noretry:true};
+						return callback(null, {a:1, text:'代付没钱', url:`${getHost(req)}/hepay_check_balance.html?orderid=${orderid}&want=${money}&msg=${err.message}`, noretry:true});
 					}
 					if (err.message=='订单号重复') {
 						order.err={text:'提交银行'};
