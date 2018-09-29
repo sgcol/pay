@@ -338,7 +338,7 @@ getDB(function(err, db) {
 				return cb({title:'失败', message:ret.rsp_msg});
 			}
 			if (ret.state=='0') return cb(null, 'success');
-			if (ret.state=='1') return cb({title:'失败', message:ret.rsp_msg, noretry:true});
+			if (ret.state=='1') return cb({title:'失败', message:'处理失败，请驳回', noretry:true});
 			if (ret.state=='2') return cb(null, '银行处理中');
 		});
 	}
