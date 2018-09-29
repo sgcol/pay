@@ -421,7 +421,7 @@ getDB(function(err, db) {
 				return;
 			}
 			if (!order.err) {
-				ret[orderid]={text:'success'};
+				ret[orgOrderid]={text:'success'};
 				return;
 			}
 			if (order.err.url && order.err.url.indexOf('http')!=0) order.err.url=getHost(req)+order.err.url;
