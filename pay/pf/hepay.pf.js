@@ -390,7 +390,6 @@ getDB(function(err, db) {
 			dispatch(order.obj, function(err, state) {
 				if (err) {
 					if (err.message=='余额不足') {
-						add2Retry(order, 2);
 						order.err={text:'代付没钱', url:`${getHost(req)}/hepay_check_balance.html?orderid=${orderid}&want=${money}&msg=${err.message}`, noretry:true};
 						return callback(null, {a:1, text:'代付没钱', url:`${getHost(req)}/hepay_check_balance.html?orderid=${orderid}&want=${money}&msg=${err.message}`, noretry:true});
 					}
