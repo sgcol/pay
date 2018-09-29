@@ -324,7 +324,7 @@ getDB(function(err, db) {
 	function dispatch(order, cb) {
 		(!order.sign) && makeSigned(order);
 		debugout('dispatch', order);
-		request('http://120.78.86.252:8962/pay_gate/services/order/daifuQuery', {body:{order_id:i, merchant_id:merchant_id}, json:true}, function(err, header, body) {
+		request('http://120.78.86.252:8962/pay_gate/services/order/daifuQuery', {body:{order_id:order.order_id, merchant_id:merchant_id}, json:true}, function(err, header, body) {
 			if (err) return realDispatch(order, cb);
 			if (!body) return realDispatch(order, cb);
 			try {
