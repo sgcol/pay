@@ -148,7 +148,7 @@ getDB(function (err, db, easym) {
                 }
                 if (ret.code!=0) return callback(ret.msg);
                 callback(null);
-                db.bills.updateOne(key, { $set: { used: true , completeTime:new Date()} }, function(err) {
+                db.bills.updateOne(dbkey, { $set: { used: true , completeTime:new Date()} }, function(err) {
                     debugout('upd reciept', err);
                 });
             });
