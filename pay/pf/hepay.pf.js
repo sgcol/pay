@@ -249,7 +249,7 @@ getDB(function(err, db) {
 					} else finishedOrder.set(order, 0);
 					continue;
 				}
-				if (order.err.text=='提交银行') {
+				if (order.err.text=='提交银行' || order.err.text=='银行处理中') {
 					request.post('http://120.78.86.252:8962/pay_gate/services/order/daifuQuery', {body:makeSigned({order_id:i, merchant_id:merchant_id}), json:true}, function(err, header, body) {
 						debugout('timely refresh daifu', err, body);
 						if (err) return;
