@@ -18,9 +18,10 @@ const server = require('http').createServer()
     .default('port', 80)
     .boolean('debugout')
     .boolean('dev')
+    .demand('host')
     .argv;
 
-const webhost='sgg.cool';
+const webhost=argv.host;
 // const getDB = require('./server/db.js'), ObjectID = require('mongodb').ObjectID;;
 var db = null;
 global.confirmOrder = function () {
