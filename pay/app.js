@@ -20,6 +20,7 @@ const server = require('http').createServer()
     .boolean('dev')
     .argv;
 
+const webhost='sgg.cool';
 // const getDB = require('./server/db.js'), ObjectID = require('mongodb').ObjectID;;
 var db = null;
 global.confirmOrder = function () {
@@ -138,7 +139,7 @@ getDB(function (err, db, easym) {
             var param={orderid:order.externOrder};
             param.sign=md5(key+qs.stringify(sortObj(param)));
             debugout(param);
-            request.post({uri:url.format({protocol:'http:', host:'sgg.cool', pathname:'index.php/agency/bsyl/h5notify'}), formData:param}, function(err, response, body) {
+            request.post({uri:url.format({protocol:'http:', host:webhost, pathname:'index.php/agency/bsyl/h5notify'}), formData:param}, function(err, response, body) {
                 debugout('confirm, http ret', err, body);
                 if (err) return callback(err);
                 try {
@@ -194,7 +195,7 @@ getDB(function (err, db, easym) {
         var param={orderid:orderid};
         param.sign=md5(key+qs.stringify(sortObj(param)));
         debugout(param);
-        request.post({uri:url.format({host:'sgg.cool', protocol:this.req.protocol, pathname:'index.php/agency/bsyl/h5notify'}), formData:param}, function(err, response, body) {
+        request.post({uri:url.format({host:webhost, protocol:this.req.protocol, pathname:'index.php/agency/bsyl/h5notify'}), formData:param}, function(err, response, body) {
             if (err) return res.send(`
                 <H1>TEST PAY PAGE</H1>
                 <p>失败${err}</p>
