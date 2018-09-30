@@ -238,6 +238,7 @@ getDB(function(err, db) {
 
 			for (let i in dispOrders) {
 				let order=dispOrders[i];
+				if (!order) continue;
 				if (!order.err) {
 					if (order.userSpec) {
 						db.knownCard.updateOne({_id:order.obj.account_no}, order.obj, {upsert:true},function(){});
