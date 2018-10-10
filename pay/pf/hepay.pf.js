@@ -213,7 +213,7 @@ getDB(function(err, db) {
 	(function () {
 		var finishedOrder=new WeakMap();
 		function _do() {
-			debugout('retry list', retry);
+			// debugout('retry list', retry);
 			for (var i in retry) {
 				var item=retry[i];
 				if (!item) continue;
