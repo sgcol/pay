@@ -1,5 +1,5 @@
 const getDB=require('../db.js'),argv=require('yargs').argv, request=require('request'), qs=require('querystring').stringify;
-const debugout=require('debugout')(argv.debugout);
+const debugout=require('debugout')(argv.debugout),clone=require('clone');
 var ali_bank_keyl;
 if (argv.dev) {
 	ali_bank_key='fa2b27966ef04e45817efae241e78e77';  // test version
