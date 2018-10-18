@@ -10,6 +10,7 @@ module.exports=function (cb) {
 	else new easym.DbProvider().init(argv.mongo, {exists:[
 		{bills:{index:['user'], capped:true, size:100*1024, max:100000}},
 		'knownCard',
+		{'tonydisp':{index:['used'], capped:true, size:100*1024, max:100000}},
 		]}, function(err, db) {
 		if (err) return cb(err);
 		__stored_db=db;

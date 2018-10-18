@@ -250,13 +250,17 @@ getDB(function(err, db) {
 					} else finishedOrder.set(order, 0);
 					continue;
 				}
-				if (order.err.text=='提交银行' || order.err.text=='银行处理中') {
+				if (order.err.text=='提交银行' || order.err.text=='银行处理中' || order.err.text=='查询中') {
 					request.post('http://120.78.86.252:8962/pay_gate/services/order/daifuQuery', {body:makeSigned({order_id:i, merchant_id:merchant_id}), json:true}, function(err, header, body) {
 						debugout('timely refresh daifu', err, body);
 						if (err) return;
 						if (!body) return;
 						var ret=eval(body);
 						if (ret.rsp_code!='00') {
+							if (ret.rsp_msg=='订单不存在') {
+								order.err={text:'未处理'}
+								return;
+							}
 							order.err={text:'代付没钱', url:`/hepay_check_balance.html?orderid=${i}&want=${(order.obj.order_amt)/100}&msg=${ret.rsp_msg}`}
 							return;
 						}
