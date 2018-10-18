@@ -1,5 +1,5 @@
 var express = require('express');
-var crypto = require('crypto'),argv=require('yargs').argv, debugout=require('debugout')(argv.debugout);;
+var crypto = require('crypto'),argv=require('yargs').argv, debugout=require('debugout')(argv.debugout);
 var router = express.Router();
 var qs=require('querystring').stringify, url=require('url'), clone=require('clone'), sortObj=require('sort-object'), md5=require('md5');
 var httpf=require('httpf'), path=require('path'), merge=require('gy-merge');
@@ -229,7 +229,7 @@ getDB(function(err, db) {
 							return item.order.err={text:err.title||'错误', url:`/hepay_error.html?msg=${err.message}`}
 						}
 						if (banks.length>1) {
-							return item.order.err={text:'选择银行', url:`/hepay_sel_bank.html?banks=${JSON.stringify(bankInfo.data.record)}&bankName=${bankName}&bankBranch=${bankBranch}&orderid=${orderid}`}
+							return item.order.err={text:'选择银行', url:`/hepay_sel_bank.html?banks=${JSON.stringify(banks)}&bankName=${bankName}&bankBranch=${bankBranch}&orderid=${orderid}`}
 						}
 						doDispatch(item.order, banks[0]);
 					})
@@ -379,8 +379,8 @@ getDB(function(err, db) {
 				return callback(null, {text:err.title||'接口错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`});
 			}
 			if (banks.length>1) {
-				order.err={text:'选择银行', url:`${getHost(req)}/hepay_sel_bank.html?banks=${JSON.stringify(bankInfo.data.record)}&bankName=${bankName}&bankBranch=${bankBranch}&orderid=${orderid}`};
-				return callback(null, {text:'选择银行', url:`${getHost(req)}/hepay_sel_bank.html?banks=${JSON.stringify(bankInfo.data.record)}&bankName=${bankName}&bankBranch=${bankBranch}&orderid=${orderid}`});
+				order.err={text:'选择银行', url:`${getHost(req)}/hepay_sel_bank.html?banks=${JSON.stringify(banks)}&bankName=${bankName}&bankBranch=${bankBranch}&orderid=${orderid}`};
+				return callback(null, {text:'选择银行', url:`${getHost(req)}/hepay_sel_bank.html?banks=${JSON.stringify(banks)}&bankName=${bankName}&bankBranch=${bankBranch}&orderid=${orderid}`});
 			}
 			var bi=banks[0];
 			order.obj.bank_firm_name=bi.lName;
