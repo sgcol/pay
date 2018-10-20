@@ -6,8 +6,22 @@ var httpf=require('httpf'), path=require('path'), merge=require('gy-merge');
 var getDB=require('../db.js'), ObjectID = require('mongodb').ObjectID;
 var _=require('lodash'),async=require('async'), request=require('request'), _base=require('./base.js'), getBank=_base.getBank;
 
-getDB(function(err, db) {
-    var dispOrders={};
+(function prepareData(cb) {
+	getDB(function(err, db) {
+		if (err) return console.log('load db failed, tony.pf can`t work');
+		db.tonydisp.find({used:false}).toArray(function(err, r) {
+			if (err) return cb(null, db); // without recoved dispOrders;
+			var dispOrders={};
+			for (var i=0; i<r.length; i++) {
+				dispOrders[r[i]._id]=r[i];
+			}
+			cb(null, db, dispOrders);
+		});
+	})
+})(openService);
+
+function openService(err, db, dispOrders) {
+	dispOrders=dispOrders||{};
 	router.all('/dispatch', httpf({orderid:'string', money:'number', alipay:'?string', wechat:'?string', bankName:'?string', bankBranch:'?string', bankCard:'?string', bankOwner:'string', mobile:'string', callback:true}, 
 	function(orderid, money, alipay, wechat, bankName, bankBranch, bankCard, bankOwner, mobile, callback) {
         if (!money || !isNumeric(money)) return callback('money必须是数字');
@@ -41,8 +55,11 @@ getDB(function(err, db) {
 			order.city=bi.city;order.province=bi.province;
 			order.bank_firm_no=bi.bankCode;
 			order.bank_name=bi.bank;
-			callback();
-            db.tonydisp.updateOne({ _id:orderid}, merge(order, {time: new Date(), money:money, completeTime:new Date(0), used:false}), {upsert:true});
+			createOrder(orderid, money, function(err) {
+				if (err) return callback(err);
+				db.tonydisp.updateOne({ _id:orderid}, merge(order, {time: new Date(), money:money, completeTime:new Date(0), used:false}), {upsert:true});
+				callback();
+			})
 		})
     }));
     router.all('/list', httpf({time:'string'}, function(time) {
@@ -54,7 +71,22 @@ getDB(function(err, db) {
 				str+=[order.order_id, order.account_name, order.account_no, order.bank_name, order.province, order.city, order.bank_firm_name, order.order_amt, '2', ''].join(',')+'\n';
         }
         return httpf.text(str);
-    }));
-});
+	}));
+	router.all('/report', httpf({err:'string', orderid:'string', money:'number', time:'string', callback:true}, function(err, orderid, money, time, callback) {
+		var order=dispOrders[orderid];
+		if (!order) return callback('no such order '+orderid);
+		if (err) {
+			order.err={text:err};
+			return callback();
+		}
+		order.err=undefined;
+		confirmOrder(orderid, money, function(e) {
+			if (e) return callback(e);
+			db.tonydisp.updateOne({_id:orderid}, {$set:{completeTime:new Date(), used:true}});
+			callback();
+		})
+
+	}))
+};
 
 module.exports=router;
