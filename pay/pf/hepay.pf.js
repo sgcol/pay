@@ -467,6 +467,9 @@ getDB(function(err, db) {
 		if (md5(key+time)!=sign) return callback('sign err');
 
 	}))
+	router.all('/verifySign', verifySign, function(req, res) {
+		res.send({result:'ok'});
+	})
 });
 
 router.all('/balance', httpf({callback:true}, function(callback) {
