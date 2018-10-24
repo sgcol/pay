@@ -258,7 +258,7 @@ getDB(function(err, db) {
 						var ret=eval(body);
 						if (ret.rsp_code!='00') {
 							if (ret.rsp_msg=='订单不存在') {
-								order.err={text:'未处理'}
+								if (order.err.text!='查询中') order.err={text:'未处理'}
 								return;
 							}
 							order.err={text:'代付没钱', url:`/hepay_check_balance.html?orderid=${i}&want=${(order.obj.order_amt)/100}&msg=${ret.rsp_msg}`}
