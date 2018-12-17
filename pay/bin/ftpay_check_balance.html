@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <title>支付</title>
+</head>
+<body>
+  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+  <script src="./jquery-3.2.1.min.js"></script>
+  <script src="./popper.min.js"></script>
+  <script src="./bootstrap.min.js"></script>
+  <script src="./qrcode.min.js"></script>
+  <div class="container-fluid">
+      <div class="row" style="background-color:#9ec9ec">
+            <div class="col-2"><a href="javascript:history.back()" style="font-size:30px; font-weight:bold; color:black; text-decoration:none;">&lt;</a></div>
+            <div class="col-10"><span id="title" class="right" style="float:right; margin-right:10px; font-size:30px; color:#ef0606">余额</span></div>
+      </div>
+      <div class="row" style="margin-top:48px; display:visible;">
+        <div class="col-1"></div>
+        <div class="col-10">
+          <div class="jumbotron jumbotron-fluid">
+              <h1 class="display-4">账户余额</h1>
+              <p class="lead" id="balance"></p>
+              <p class="lead">代理取现金额：<span id="user_deposite"></span></p>
+              <hr class="my-4">
+              <p class="lead">
+                <span id="savemoney">
+                存入
+                  <input id="amount" placeholder="&lt;5000"></input><a class="btn btn-primary btn-lg" href="#" role="button" style="margin-left:30px">充值</a>
+                </span>
+                <!-- <span id="qr">用手机浏览器扫码<div id="qrcode" ></div></span> -->
+              </p>
+              <p class="lead">余额充足之后再选择付款</p>
+          </div>
+          <div class="col-1"></div>
+      </div>
+      <a href="#" id="pay" class="btn btn-lg btn-block btn-primary" style="margin-top:40px">付款</a>
+      <a href="javascript:history.back()" class="btn btn-lg btn-block btn-outline-primary" style="margin-top:40px">返回</a>  
+  </div>
+</body>
+<script>
+  // var isMobile=( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) );
+  // if (!isMobile) {
+  //   $('#savemoney').hide();
+  //   $('#qr').show();
+  //   new QRCode(document.getElementById("qrcode"), location.href);
+  // } else {
+  //   $('#savemoney').show();
+  //   $('#qr').hide();    
+  // }
+  var sel_bank=null;
+  window.onload=function(){
+    var query = {};
+    location.search.substr(1).split("&").forEach(function (pair) {
+        if (pair === "") return;
+        var parts = pair.split("=");
+        query[parts[0]] = parts[1] &&
+            decodeURIComponent(parts[1].replace(/\+/g, " "));
+    });
+    $('#user_deposite').text(Number(query.want).toFixed(2));
+    $.ajax('./pf/ftpay/balance',{
+      dataType: "JSON",
+      success: function (ret) {
+          if (ret.data.length==0) $('#balance').text(0);
+          else $('#balance').text(ret.data[0].unpaid);
+      }
+    });
+    $('.jumbotron a').on('click', function(e) {
+      e.preventDefault();
+      var m=Number($('#amount').val());
+      if (m>5000) return alert('单笔充值上限5000');
+      location.href='./pf/ftpay/savemoney?money='+m;
+    })
+
+    $('#pay').on('click', function(e) {
+      e.preventDefault();
+      if (!query.orderid) return alert('找不到orderid');
+      $.ajax('./pf/hepay/pay_with_bank', {data:{orderid:query.orderid}});
+      alert('付款结果请稍后在列表中查看');
+      history.back();
+    })
+  }
+
+
+</script>
+</html>

@@ -53,8 +53,8 @@ if (argv.debugout) {
 }
 
 app.use(compression());
-app.use(bodyParser.urlencoded({ extended: true, limit: '5mb' }));
 app.use(express.static(path.join(__dirname, 'bin'), { index: 'index.html' }));
+app.use(bodyParser.urlencoded({ extended: true, limit: '5mb' }));
 app.param('interface', function (req, res, next, intf) {
     req.pf = intf;
     next();
@@ -64,6 +64,9 @@ app.use('/pf/:interface', function (req, res, next) {
     if (external_pf[req.pf]) return external_pf[req.pf].call(null, req, res, function () { res.status(404).send({err:'no such function ' + req.url, detail:arguments}); });
     res.end('pf ' + req.pf + ' not defined');
 });
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'ejs');
+
 function dateString(d) {
     return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
 }
@@ -116,10 +119,11 @@ getDB(function (err, db, easym) {
         try {
         if (!money || !isNumeric(money)) return callback('money必须是数字');
         if (Math.ceil(money*100)!=money*100) return callback('money 最多有两位小数');
-		db.bills.updateOne({ _id:externOrderid}, {externOrder:externOrderid, time: new Date(), money:money, completeTime:new Date(0), used:false}, {upsert:true, w:1}, function (err, r) {
+		db.bills.updateOne({ _id:externOrderid}, {$setOnInsert:{externOrder:externOrderid, time: new Date(), money:money, completeTime:new Date(0), used:false}}, {upsert:true, w:1}, function (err, r) {
             if (err) {
                 return callback(err);
             }
+            if (r.upsertedCount==0) return callback('重复的orderid');
 			callback(null, { orderid: externOrderid, money: money });
         });
     }catch(e) {debugout(e)}
