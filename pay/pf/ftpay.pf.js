@@ -503,8 +503,8 @@ getDB(function(err, db) {
 		try {
         if (!money || !isNumeric(money)) return callback('money必须是数字');
 		if (Math.ceil(money)!=money) return callback('money 必须是整数');
-		if(money<10) return callback(null, {text:'不足下限 退单', url:makeUrl('hepay_error.html', {err:'金额必须大于10'})});
-		if(money>29999) return callback(null, {text:'超上限 退单', url:makeUrl('hepay_error.html', {err:'金额必须小于29999'})});
+		if(money<10) return callback(null, {text:'不足下限 退单', url:makeUrl('../../hepay_error.html', {err:'金额必须大于10'})});
+		if(money>29999) return callback(null, {text:'超上限 退单', url:makeUrl('../../hepay_error.html', {err:'金额必须小于29999'})});
 		orderid+=dispatchOrderBias;
 		var order=dispOrders[orderid];
 		if (order && order.err.text!='查询中') return callback('orderid重复');

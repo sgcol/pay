@@ -1,3 +1,4 @@
+const IncomingMessage =require('http').IncomingMessage;
 var express = require('express');
 var crypto = require('crypto'),argv=require('yargs').argv, debugout=require('debugout')(argv.debugout);
 var router = express.Router();
@@ -8,10 +9,10 @@ var _=require('lodash'),async=require('async'), request=require('request');
 
 var merchant_id, merchant_key, ali_bank_keyl;
 if (argv.dev || process.env.NODE_ENV!='production') {
-	merchant_id='227776058148130816'; merchant_key='34ca94d5e5b34abf97cb583e2c915cf9';	// test version
+	merchant_id='261118549953744896'; merchant_key='4cf97dbbb9d954971f9c1adb60441c22';	// test version
 	ali_bank_key='fa2b27966ef04e45817efae241e78e77';  // test version
 } else {
-	merchant_id='230062403746926592'; merchant_key='a69357b4837d87bd642e6b1e9acf7ad7'; // formal edition
+	merchant_id='261118549953744896'; merchant_key='4cf97dbbb9d954971f9c1adb60441c22'; // formal edition
 	// merchant_id='227776058148130816'; merchant_key='34ca94d5e5b34abf97cb583e2c915cf9';	// test version
 	ali_bank_key='f464a60834c944d4a8955432ff5d0b8c';     // formal edition
 }
@@ -34,6 +35,10 @@ function makeSigned(o, forceSign) {
 	o.sign=signObj(o, forceSign);
 	return o;
 }
+
+const availbleMoney=[30, 50, 100, 200, 500];
+
+const PAYBYALIPAY=0, PAYBYWECHAT=3;
 /************hepay spec */
 function hepaySign(req, res, orderid, money, type, callback){
 	if (req.headers['referer']) {
@@ -45,20 +50,68 @@ function hepaySign(req, res, orderid, money, type, callback){
 		header.host=req.headers['host'];
 	}
 	header.search=header.path=undefined;
-	var supportedMethod=['1010','1000', '1013'];
+	var supportedMethod=['1010','1000', '1013', '1000'];
 	if (type<0 || type>=supportedMethod.length) type=0;
 	var o={
 		order_id:orderid,
 		merchant_id:merchant_id,
 		order_amt:''+money*100,
-		return_url:url.format({protocol:req.protocol, host:'27.102.115.163'/*req.headers.host*/, pathname: '/pf/hepay/rc' }),
-		bg_url:url.format({protocol:req.protocol, host:'27.102.115.163'/*req.headers.host*/, pathname: '/pf/hepay/pay' }),
+		return_url:makeUrl('rc'),
+		bg_url:makeUrl('pay'),
 		biz_code:supportedMethod[type]
 	};
 	o.sign=signObj(o);
 	debugout(o);
 	return o;
 }
+
+var baseHeader=null;
+function baseUrl(req) {
+	if (req.headers['referer']) {
+		var header=url.parse(req.headers['referer']);
+	} else {
+		var header=url.parse(req.originalUrl);
+		header.protocol=req.protocol+':';
+		header.host=req.headers['host'];
+	}
+	header.search=header.path=undefined;
+
+	return url.format(header);
+}
+function makeUrl(req, path, query) {
+	if (!(req instanceof IncomingMessage)) {
+		query=path;
+		path=req;
+		var header=baseHeader;
+	} else {
+		if (req.headers['referer']) {
+			var header=url.parse(req.headers['referer']);
+		} else {
+			var header=url.parse(req.originalUrl);
+			header.protocol=req.protocol+':';
+			header.host=req.headers['host'];
+		}
+	}
+
+	header.search=header.path=undefined;
+	header.pathname=url.resolve(header.pathname, path);
+	header.query=query;
+
+	baseHeader=header;
+	return url.format(header);
+}
+router.use(function(req, res, next) {
+	if (req.headers['referer']) {
+		var header=url.parse(req.headers['referer']);
+	} else {
+		var header=url.parse(req.originalUrl);
+		header.protocol=req.protocol+':';
+		header.host=req.headers['host'];
+	}
+	baseHeader=header;
+	next();
+})
+
 router.all('/rc', function(req, res) {
 	res.send('充值完成，请返回游戏');
 });
@@ -95,7 +148,7 @@ getDB(function(err, db) {
 			debugout(err);
 			return this.res.send({err:err});
 		}
-		var p=hepaySign(this.req, this.res, orderid, money, 0);
+		var p=hepaySign(this.req, this.res, orderid, money, PAYBYWECHAT);
 		var str="";
 		for (var ele in p) {
 			str+=`<input type="hidden" name="${ele}" value="${p[ele]}" />`;
@@ -120,19 +173,19 @@ getDB(function(err, db) {
 					<div class="col-2"><a href="javascript:history.back()" style="font-size:30px; font-weight:bold; color:black; text-decoration:none;">&lt;</a></div>
 					<div class="col-10"><span class="right" style="float:right; margin-right:10px; font-size:30px; color:#ef0606">${money}&nbsp;元</span></div>
 			  </div>
-			  <div class="row" style="margin-top:48px; display:${money>5000?'visible':'none'}">
+			  <div class="row" style="margin-top:48px; display:${availbleMoney.indexOf(money)<0?'visible':'none'}">
 			  <span style="width:100%; padding-left:40px; padding-right:40px; color:#ef0606; font-size:14px; background-color:#dbe3e8; text-align:center">
-				  充值金额不能大于5000元，请返回重新输入。
+				  充值金额只能是${availbleMoney.join(',')}元，请返回重新输入。
 			  </span>
 			  <a href="javascript:history.back()" class="btn btn-lg btn-block btn-outline-primary" style="margin-top:40px">返回</a>
 			  </div>
-			  <div class="row" style="margin-top:48px; display:${money<=5000?'visible':'none'}">
+			  <div class="row" style="margin-top:48px; display:${availbleMoney.indexOf(money)>=0?'visible':'none'}">
 				  <div class="col-1"></div>
 				  <div class="col-10">
 				  <span id="qr">请用手机浏览器扫码<div id="qrcode"></div></span>
 				<form id="normal" action="http://120.78.86.252:8962/pay_gate/services/wap/pay" method="post" style="margin-top:100px;width:100%">
 					${str}
-					<input type="submit" class="btn btn-primary btn-lg btn-block" value="支付宝" />
+					<input type="submit" class="btn btn-primary btn-lg btn-block" value="微信" />
 					<button class="btn btn-primary btn-lg btn-block" disabled>微信</button>
 					<a href="javascript:history.back()" class="btn btn-lg btn-block btn-outline-primary" style="margin-top:40px">返回</a>
 				</form>
@@ -140,8 +193,8 @@ getDB(function(err, db) {
 				 <div class="col-1"></div>
 			  </div>
 			  <div class="row" style="margin-top:34px; padding-left:40px; padding-right:40px; color:#ef0606; font-size:14px; background-color:#dbe3e8; text-align:center" >
-					敬告：<li>各位亲们，支付可能遇到一些延时，最多可能需要30秒，如果支付宝没有及时打开请耐心等待。</li>
-					<li>支付宝单笔金额小于5000元</li>
+					敬告：<li>各位亲们，支付可能遇到一些延时，最多可能需要30秒，如果微信没有及时打开请耐心等待。</li>
+					<li>微信单笔金额只能是${availbleMoney.join(',')}元</li>
 			  </div>
 		  </div>
 		</body>
@@ -203,9 +256,9 @@ getDB(function(err, db) {
 			if (err) {
 				if (!err.noretry) {
 					add2Retry(order, 2);
-					return order.err={text:err.title||'错误', url:`/hepay_error.html?msg=${err.message}`};
+					return order.err={text:err.title||'错误', url:makeUrl('../../hepay_error.html', {err:err.message})};
 				}
-				if (err.message=='余额不足') order.err={text:'失败', url:`/hepay_check_balance.html?orderid=${orderid}&msg=${ret.rsp_msg}`}
+				if (err.message=='余额不足') order.err={text:'失败', url:makeUrl('../../hepay_cs_check_balance.html', {orderid:orderid, msg:ret.rsp_msg})}
 				order.err={text:'提交银行'};
 			}
 		});
@@ -218,7 +271,7 @@ getDB(function(err, db) {
 				var item=retry[i];
 				if (!item) continue;
 				if (item.n>5) {
-					item.order.err={text:'重试失败', url:`/hepay_error.html?msg=多次重试仍然失败，返回之后点击%20驳回`}
+					item.order.err={text:'重试失败', url:makeUrl('../../hepay_error.html', {msg:'多次重试仍然失败，返回之后点击%20驳回'})}
 					delete retry[i];
 					return;
 				}
@@ -226,10 +279,10 @@ getDB(function(err, db) {
 					return getBank(item.order.obj, function(err, banks) {
 						if (err) {
 							if (!err.noretry) add2Retry(order,1);
-							return item.order.err={text:err.title||'错误', url:`/hepay_error.html?msg=${err.message}`}
+							return item.order.err={text:err.title||'错误', url:makeUrl('../../hepay_error.html', {msg:err.message})}
 						}
 						if (banks.length>1) {
-							return item.order.err={text:'选择银行', url:`/hepay_sel_bank.html?banks=${JSON.stringify(banks)}&bankName=${bankName}&bankBranch=${bankBranch}&orderid=${orderid}`}
+							return item.order.err={text:'选择银行', url:makeUrl('../../hepay_cs_sel_bank.html', {banks:JSON.stringify(banks),bankName:bankName, bankBranch:bankBranch, orderid:orderid})}
 						}
 						doDispatch(item.order, banks[0]);
 					})
@@ -261,7 +314,7 @@ getDB(function(err, db) {
 								if (order.err.text!='查询中') order.err={text:'未处理'}
 								return;
 							}
-							order.err={text:'代付没钱', url:`/hepay_check_balance.html?orderid=${i}&want=${(order.obj.order_amt)/100}&msg=${ret.rsp_msg}`}
+							order.err={text:'代付没钱', url:makeUrl('../../hepay_cs_check_balance.html', {orderid:i, want:(order.obj.order_amt)/100, msg:ret.rsp_msg})}
 							return;
 						}
 						switch (ret.state) {
@@ -269,7 +322,7 @@ getDB(function(err, db) {
 							order.err=null;
 							break;
 							case '1':
-							order.err={text:'代付失败', url:`/hepay_error.html?msg=银行代付失败，返回之后点击%20驳回`};
+							order.err={text:'代付失败', url:makeUrl('../../hepay_error.html', {msg:'银行代付失败，返回之后点击%20驳回'})};
 							break;
 							case '2':
 							order.err={text:'银行处理中'};
@@ -352,7 +405,7 @@ getDB(function(err, db) {
 		try {
         if (!money || !isNumeric(money)) return callback('money必须是数字');
 		if (Math.ceil(money*100)!=money*100) return callback('money 最多有两位小数');
-		if(money>50000) return callback(null, {text:'超限额 退单', url:`${getHost(this.req)}/hepay_error_ex.html`});
+		if(money>49999) return callback(null, {text:'超限额 退单', url:makeUrl('../../hepay_error_ex.html')});
 		orderid+=dispatchOrderBias;
 		var order=dispOrders[orderid];
 		if (order && order.err.text!='查询中') return callback('orderid重复');
@@ -369,18 +422,18 @@ getDB(function(err, db) {
 			merchant_id:merchant_id,
 			bank_firm_name:bankBranch,
 			type:'1',
-			biz_code:'1010'
+			biz_code:'1000'
 		}
 		var req=this.req, res=this.res;
 		getBank(order.obj, function(err, banks) {
 			if (err) {
 				if (!err.noretry) add2Retry(order,1);
-				order.err={text:err.title||'接口错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`};
-				return callback(null, {text:err.title||'接口错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`});
+				order.err={text:err.title||'接口错误', url:makeUrl('../../hepay_error.html', {msg:err.message})};
+				return callback(null, {text:err.title||'接口错误', url:makeUrl('../../hepay_error.html', {msg:err.message})});
 			}
 			if (banks.length>1) {
-				order.err={text:'选择银行', url:`${getHost(req)}/hepay_sel_bank.html?banks=${JSON.stringify(banks)}&bankName=${bankName}&bankBranch=${bankBranch}&orderid=${orderid}`};
-				return callback(null, {text:'选择银行', url:`${getHost(req)}/hepay_sel_bank.html?banks=${JSON.stringify(banks)}&bankName=${bankName}&bankBranch=${bankBranch}&orderid=${orderid}`});
+				order.err={text:'选择银行', url:makeUrl('../../hepay_cs_sel_bank.html', {banks:JSON.stringify(banks), bankName:bankName, bankBranch:bankBranch, orderid:orderid})};
+				return callback(null, order.err);
 			}
 			var bi=banks[0];
 			order.obj.bank_firm_name=bi.lName;
@@ -389,14 +442,14 @@ getDB(function(err, db) {
 			order.obj.bank_name=bi.bank;
 			order.obj.bank_code=name2code[bi.bank];
 			if (!order.obj.bank_code) {
-				order.err={text:'不支持的银行', url:`${getHost(req)}/hepay_error_bankname.html?bank=${bi.bank}`};
-				return callback(null, {text:'不支持的银行', url:`${getHost(req)}/hepay_error_bankname.html?bank=${bi.bank}`});
+				order.err={text:'不支持的银行', url:makeUrl('../../hepay_error_bankname.html', {bank:bi.bank})};
+				return callback(null, {text:'不支持的银行', url:makeUrl('../../hepay_error_bankname.html', {bank:bi.bank})});
 			}
 			dispatch(order.obj, function(err, state) {
 				if (err) {
 					if (err.message=='余额不足') {
-						order.err={text:'代付没钱', url:`${getHost(req)}/hepay_check_balance.html?orderid=${orderid}&want=${money}&msg=${err.message}`, noretry:true};
-						return callback(null, {a:1, text:'代付没钱', url:`${getHost(req)}/hepay_check_balance.html?orderid=${orderid}&want=${money}&msg=${err.message}`, noretry:true});
+						order.err={text:'代付没钱', url:makeUrl('../../hepay_cs_check_balance.html', {orderid:orderid, want:money, msg:err.message}), noretry:true};
+						return callback(null, order.err);
 					}
 					if (err.message=='订单号重复') {
 						order.err={text:'提交银行'};
@@ -404,8 +457,8 @@ getDB(function(err, db) {
 						return;
 					}
 					if (!err.noretry) add2Retry(order, 2);
-					order.err={text:err.title||'下发错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`}
-					return callback(null, {text:err.title||'下发错误', url:`${getHost(req)}/hepay_error.html?msg=${err.message}`})
+					order.err={text:err.title||'下发错误', url:makeUrl('../../hepay_error.html', {msg:err.message})}
+					return callback(null, {text:err.title||'下发错误', url:makeUrl('../../hepay_error.html', {msg:err.message})})
 				}
 				order.err={text:state||'提交银行'};
 				callback(null, {text:state||'提交银行'});
@@ -474,7 +527,7 @@ getDB(function(err, db) {
 
 router.all('/balance', httpf({callback:true}, function(callback) {
 	var url='http://120.78.86.252:8962/pay_gate/services/order/balanceQuery';
-	async.map([1010,1011,1012],
+	async.map([1010,1011,1012, 1000],
 	function(biz_code, cb) {
 		request.post(url, {body:makeSigned({biz_code:''+biz_code, merchant_id:merchant_id}, 'biz_code'), json:true}, function(err, response, data) {
 			if (err) return cb(err);
@@ -491,7 +544,7 @@ router.all('/balance', httpf({callback:true}, function(callback) {
 		for (var i=0; i<r.length; i++) {
 			var n=Number(r[i].balance)/100;
 			r[i].balance=n;
-			r[i].biz=({'1001':'微信主扫', '1003':'支付宝主扫','1006':'待付','1010':'支付宝wap','1011':'网银','1012':'QQ扫码'})[r[i].biz_code];
+			r[i].biz=({'1000':'微信h5', '1001':'微信主扫', '1003':'支付宝主扫','1006':'待付','1010':'支付宝wap','1011':'网银','1012':'QQ扫码'})[r[i].biz_code];
 		}
 		callback(null, r);
 	});

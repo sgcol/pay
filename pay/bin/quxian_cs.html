@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-cn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <title>支付</title>
+</head>
+<body>
+  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+  <script src="https://code.jquery.com/jquery-3.2.1.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+  <script src="/qrcode.min.js"></script>
+  <div class="container-fluid">
+      <div class="row" style="background-color:#9ec9ec">
+            <div class="col-2"><a href="javascript:history.back()" style="font-size:30px; font-weight:bold; color:black; text-decoration:none;">&lt;</a></div>
+            <div class="col-10"><span id="title" class="right" style="float:right; margin-right:10px; font-size:30px; color:#ef0606">取现</span></div>
+      </div>
+      <div class="row" style="margin-top:48px; display:visible;">
+        <div class="col-1"></div>
+        <div class="col-10">
+          <div class="jumbotron jumbotron-fluid">
+              <h1 class="display-4">账户余额</h1>
+              <p class="lead" id="balance"></p>
+          </div>
+          <form action="/pf/hepay/withdraw">
+            <div class="form-group">
+                <label for="">姓名</label>
+                <input type="text" class="form-control" id="name" aria-describedby="nameHelp" placeholder="开户人姓名">
+            </div>
+            <div class="form-group">
+                <label for="">卡号</label>
+                <input type="text" class="form-control" id="card"  placeholder="">
+            </div>
+            <div class="form-group">
+                <label for="">开户行</label>
+                <input type="text" class="form-control" id="bank"  placeholder="银行">
+            </div>
+            <div class="form-group">
+                <label for="">支行</label>
+                <input type="text" class="form-control" id="branch"  placeholder="不清楚全称就只写xx支行">
+            </div>
+            <div class="form-group">
+                <label for="">提款金额</label>
+                <input type="text" class="form-control" id="money"  placeholder="&lt;账户余额-3">
+            </div>
+            <input type="submit" class="btn btn-lg btn-block btn-primary" value="取现"></input>
+          </form>
+        </div>
+        <div class="col-1"></div>
+      </div>
+  </div>
+</body>
+<script>
+  window.onload=function(){
+    var query = {};
+    location.search.substr(1).split("&").forEach(function (pair) {
+        if (pair === "") return;
+        var parts = pair.split("=");
+        query[parts[0]] = parts[1] && decodeURIComponent(parts[1].replace(/\+/g, " "));
+    });
+    var _time = $("<input>").attr({"type": "hidden", "name":"time"}).val(query.time);
+    $('form').append($(_time));
+    var _sign = $("<input>").attr({"type": "hidden", "name":"sign"}).val(query.sign);
+    $('form').append($(_sign));
+
+    var name_ele=$('#name'), money_ele=$('#money');
+    $('form').submit(function(e) {
+        if (!card_ele.val()) return false;
+        if (!branch_ele.val()) return false;
+        if (!money_ele.val()) return false;
+        return true;
+    })
+    $.ajax('/pf/hepay/balance',{
+      dataType: "JSON",
+      success: function (ret) {
+          var b=0;
+          for (var i=0; i<ret.message.length; i++) {
+            var item=ret.message[i];
+            if (item.biz_code=='1000') {
+              b=item.balance.toFixed(2);
+              break;
+            }
+          }
+          $('#balance').text(b);
+      }
+    });
+    var card_ele=$('#card'), old_card_text=null;
+    var branch_ele=$('#branch'), old_branch_text=null;
+    function queryBank() {
+        if (card_ele.val()==old_card_text && branch_ele.val()==old_branch_text) return;
+        old_card_text=card_ele.val();
+        old_branch_text=branch_ele.val();
+        $.ajax('/pf/hepay/getBank', {data:{card:card_ele.val(), branch:branch_ele.val()}, success:function(r) {
+            if (r.err) return;
+            var bi=r.message[0];
+            $('#bank').val(bi.bank);
+            if (r.message.length==1) branch_ele.val(bi.lName);
+        }})
+    }
+    card_ele.blur(queryBank);
+    branch_ele.blur(queryBank);
+  }
+
+
+</script>
+</html>
