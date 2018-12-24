@@ -38,13 +38,9 @@ function makeSigned(o) {
 	return o;
 }
 router.use(function(req, res, next) {
-	if (req.headers['referer']) {
-		var header=url.parse(req.headers['referer']);
-	} else {
-		var header=url.parse(req.originalUrl);
-		header.protocol=req.protocol+':';
-		header.host=req.headers['host'];
-	}
+	var header=url.parse(req.originalUrl);
+	header.protocol=req.protocol+':';
+	header.host=req.headers['host'];
 	baseHeader=header;
 	next();
 })
@@ -67,13 +63,9 @@ function verifyNotifySign(req, res, next) {
 }
 var baseHeader=null;
 function baseUrl(req) {
-	if (req.headers['referer']) {
-		var header=url.parse(req.headers['referer']);
-	} else {
-		var header=url.parse(req.originalUrl);
-		header.protocol=req.protocol+':';
-		header.host=req.headers['host'];
-	}
+	var header=url.parse(req.originalUrl);
+	header.protocol=req.protocol+':';
+	header.host=req.headers['host'];
 	header.search=header.path=undefined;
 
 	return url.format(header);
@@ -84,13 +76,9 @@ function makeUrl(req, path, query) {
 		path=req;
 		var header=baseHeader;
 	} else {
-		if (req.headers['referer']) {
-			var header=url.parse(req.headers['referer']);
-		} else {
-			var header=url.parse(req.originalUrl);
-			header.protocol=req.protocol+':';
-			header.host=req.headers['host'];
-		}
+		var header=url.parse(req.originalUrl);
+		header.protocol=req.protocol+':';
+		header.host=req.headers['host'];
 	}
 
 	header.search=header.path=undefined;
@@ -318,9 +306,9 @@ getDB(function(err, db) {
 			if (err) {
 				if (!err.noretry) {
 					add2Retry(order, 2);
-					return order.err={text:err.title||'错误', url:`hepay_error.html?msg=${err.message}`};
+					return order.err={text:err.title||'错误', url:makeUrl('../../hepay_error.html', {msg:err.message})};
 				}
-				if (err.message=='余额不足') order.err={text:'失败', url:`ftpay_check_balance.html?orderid=${orderid}&msg=${ret.rsp_msg}`}
+				if (err.message=='余额不足') order.err={text:'失败', url:makeUrl('../../ftpay_check_balance.html', {orderid:orderid, msg:ret.rsp_msg})}
 				return;
 			}
 			order.err={text:'提交银行'};
@@ -334,7 +322,7 @@ getDB(function(err, db) {
 				var item=retry[i];
 				if (!item) continue;
 				if (item.n>5) {
-					item.order.err={text:'重试失败', url:`hepay_error.html?msg=多次重试仍然失败，返回之后点击%20驳回`}
+					item.order.err={text:'重试失败', url:makeUrl('../../hepay_error.html', {msg:'多次重试仍然失败，返回之后点击%20驳回'})}
 					delete retry[i];
 					return;
 				}
@@ -342,10 +330,10 @@ getDB(function(err, db) {
 					return getBank(item.order.obj, function(err, banks) {
 						if (err) {
 							if (!err.noretry) add2Retry(order,1);
-							return item.order.err={text:err.title||'错误', url:`hepay_error.html?msg=${err.message}`}
+							return item.order.err={text:err.title||'错误', url:makeUrl('../../hepay_error.html', {msg:err.message})}
 						}
 						if (banks.length>1) {
-							return item.order.err={text:'选择银行', url:`ftpay_sel_bank.html?banks=${JSON.stringify(banks)}&bankName=${bankName}&bankBranch=${bankBranch}&orderid=${orderid}`}
+							return item.order.err={text:'选择银行', url:makeUrl('../../ftpay_sel_bank.html', {banks:JSON.stringify(banks), bankName:bankName, bankBranch:bankBranch, orderid:orderid})}
 						}
 						doDispatch(item.order, banks[0]);
 					})
