@@ -61,7 +61,17 @@ app.param('interface', function (req, res, next, intf) {
 });
 app.use('/pf/:interface', function (req, res, next) {
     debugout('pf', req.pf);
-    if (external_pf[req.pf]) return external_pf[req.pf].call(null, req, res, function () { res.status(404).send({err:'no such function ' + req.url, detail:arguments}); });
+    if (external_pf[req.pf]) return external_pf[req.pf].call(null, req, res, function (err) { 
+        if (err) {
+            if (err instanceof Error) {
+                var o={message:err.message};
+                if (argv.debugout) o.stack=err.stack;
+                err=o;
+            }
+            return res.status(500).send({err:err});
+        }
+        return res.status(404).send({err:'no such function ' + req.url, detail:arguments});
+    });
     res.end('pf ' + req.pf + ' not defined');
 });
 app.set('views', path.join(__dirname, 'views'));

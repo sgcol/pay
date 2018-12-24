@@ -66,31 +66,15 @@ function hepaySign(req, res, orderid, money, type, callback){
 }
 
 var baseHeader=null;
-function baseUrl(req) {
-	if (req.headers['referer']) {
-		var header=url.parse(req.headers['referer']);
-	} else {
-		var header=url.parse(req.originalUrl);
-		header.protocol=req.protocol+':';
-		header.host=req.headers['host'];
-	}
-	header.search=header.path=undefined;
-
-	return url.format(header);
-}
 function makeUrl(req, path, query) {
 	if (!(req instanceof IncomingMessage)) {
 		query=path;
 		path=req;
 		var header=baseHeader;
 	} else {
-		if (req.headers['referer']) {
-			var header=url.parse(req.headers['referer']);
-		} else {
-			var header=url.parse(req.originalUrl);
-			header.protocol=req.protocol+':';
-			header.host=req.headers['host'];
-		}
+		var header=url.parse(req.originalUrl);
+		header.protocol=req.protocol+':';
+		header.host=req.headers['host'];
 	}
 
 	header.search=header.path=undefined;
@@ -101,13 +85,10 @@ function makeUrl(req, path, query) {
 	return url.format(header);
 }
 router.use(function(req, res, next) {
-	if (req.headers['referer']) {
-		var header=url.parse(req.headers['referer']);
-	} else {
-		var header=url.parse(req.originalUrl);
-		header.protocol=req.protocol+':';
-		header.host=req.headers['host'];
-	}
+	var header=url.parse(req.originalUrl);
+	header.protocol=req.protocol+':';
+	header.host=req.headers['host'];
+
 	baseHeader=header;
 	next();
 })
@@ -142,79 +123,11 @@ getDB(function(err, db) {
 			debugout(e);
 		} 
 	}));
+	router.all('/hepaySign', httpf({orderid:'string', money:'number'}, function(orderid, money) {
+		return hepaySign(this.req, this.res, orderid, money, PAYBYWECHAT);
+	}));
 	function doPay(err, orderid, money, prefer) {
-		try {
-		if (err) {
-			debugout(err);
-			return this.res.send({err:err});
-		}
-		var p=hepaySign(this.req, this.res, orderid, money, PAYBYWECHAT);
-		var str="";
-		for (var ele in p) {
-			str+=`<input type="hidden" name="${ele}" value="${p[ele]}" />`;
-		}
-		this.res.send(`
-		<!doctype html>
-		<html lang="zh-cn">
-		<head>
-		  <meta charset="utf-8">
-		  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-		  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-		  <title>支付</title>
-		</head>
-		<body>
-		  <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-		  <script src="https://code.jquery.com/jquery-3.2.1.min.js" crossorigin="anonymous"></script>
-		  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
-		  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
-		  <script src="/qrcode.min.js"></script>
-		  <div class="container-fluid">
-			  <div class="row" style="background-color:#9ec9ec">
-					<div class="col-2"><a href="javascript:history.back()" style="font-size:30px; font-weight:bold; color:black; text-decoration:none;">&lt;</a></div>
-					<div class="col-10"><span class="right" style="float:right; margin-right:10px; font-size:30px; color:#ef0606">${money}&nbsp;元</span></div>
-			  </div>
-			  <div class="row" style="margin-top:48px; display:${availbleMoney.indexOf(money)<0?'visible':'none'}">
-			  <span style="width:100%; padding-left:40px; padding-right:40px; color:#ef0606; font-size:14px; background-color:#dbe3e8; text-align:center">
-				  充值金额只能是${availbleMoney.join(',')}元，请返回重新输入。
-			  </span>
-			  <a href="javascript:history.back()" class="btn btn-lg btn-block btn-outline-primary" style="margin-top:40px">返回</a>
-			  </div>
-			  <div class="row" style="margin-top:48px; display:${availbleMoney.indexOf(money)>=0?'visible':'none'}">
-				  <div class="col-1"></div>
-				  <div class="col-10">
-				  <span id="qr">请用手机浏览器扫码<div id="qrcode"></div></span>
-				<form id="normal" action="http://120.78.86.252:8962/pay_gate/services/wap/pay" method="post" style="margin-top:100px;width:100%">
-					${str}
-					<input type="submit" class="btn btn-primary btn-lg btn-block" value="微信" />
-					<button class="btn btn-primary btn-lg btn-block" disabled>微信</button>
-					<a href="javascript:history.back()" class="btn btn-lg btn-block btn-outline-primary" style="margin-top:40px">返回</a>
-				</form>
-				 </div>
-				 <div class="col-1"></div>
-			  </div>
-			  <div class="row" style="margin-top:34px; padding-left:40px; padding-right:40px; color:#ef0606; font-size:14px; background-color:#dbe3e8; text-align:center" >
-					敬告：<li>各位亲们，支付可能遇到一些延时，最多可能需要30秒，如果微信没有及时打开请耐心等待。</li>
-					<li>微信单笔金额只能是${availbleMoney.join(',')}元</li>
-			  </div>
-		  </div>
-		</body>
-		<script>
-			var isMobile=( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) );
-			if (!isMobile) {
-				$('#normal').hide();
-				$('#qr').show();
-				new QRCode(document.getElementById("qrcode"), location.href);
-			} else {
-				$('#normal').show();
-				$('#qr').hide();    
-			}
-		</script>
-		</html>
-				`);
-	}catch(e) {
-		debugout(e);
-		this.res.send(e.message);
-	}
+		this.res.redirect(makeUrl('../../doOrder.html', {orderid:orderid, money:money}));
 	}
 	router.all('/internal_pay', intfCreateOrder(doPay))
 	const name2code={
