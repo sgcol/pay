@@ -8,7 +8,8 @@
         "type": "node",
         "request": "launch",
         "name": "Launch Program",
-        "program": "${workspaceFolder}/pay/app.js"
+        "program": "${workspaceFolder}/pay/app.js",
+        "args":["--debugout", "--mongo=127.0.0.1/sgg", "--port=7008", "--host=127.0.0.1"]
     }
     ]
 }

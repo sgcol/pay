@@ -137,6 +137,7 @@ getDB(function(err, db) {
 	router.all('/order', intfCreateOrder(function (err, orderid, money){
 		var req=this.req, res=this.res;
 		if (err) return this.res.render('err', {err:err});
+		if (money<31 || money>5000) return this.res.render('err', {err:'超限额，只能是31-5000之间'})
 		this.res.render('order', {orderid:orderid, money:money})
 	}));
 	const name2code={
