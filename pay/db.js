@@ -11,6 +11,7 @@ module.exports=function (cb) {
 		{bills:{index:['user'], capped:true, size:100*1024, max:100000}},
 		'knownCard',
 		{'tonydisp':{index:['used'], capped:true, size:100*1024, max:100000}},
+		{tmclog:{capped:true, size:1024*1024*1024, max:10000000}},
 		]}, function(err, db) {
 		if (err) return cb(err);
 		__stored_db=db;
