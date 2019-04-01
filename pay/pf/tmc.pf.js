@@ -67,6 +67,10 @@ function expressVerifySign(req, res, next) {
 	req.stdRet=stdRet;
 	next();
 }
+
+function signGamePack(o) {
+	return Object.assign({sign:md5(key+qs.stringify(sortObj(o)))}, o);
+}
 router.all('/rc', function(req, res) {
 	res.send('充值完成，请返回游戏');
 });
@@ -80,9 +84,19 @@ getDB(function(err, db) {
 	router.all('/pay', expressVerifySign, httpf({trans_no:'string', tmc_amt:'number', receiver:'string', callback:true}, function(trans_no, tmc_amt, receiver, callback) {
 		// trans to game
 		var stdRet=this.req.stdRet;
+		function signTmc(o) {
+			return httpf.json(sign(Object.assign(o, stdRet)));
+		}
 		db.tmclog.insert(this.req.body, {w:1}, (err)=>{
-			if (err) return callback(null, httpf.json(sign(Object.assign({result_code:'DATABASE ERROR', result_msg:err.message}, stdRet))));
-			callback(null, httpf.json(sign(Object.assign({result_code:'NOT IMPL'}, stdRet))));
+			if (err) return callback(null, signTmc({result_code:'SYSTEMERROR', result_msg:err.message}));
+			request.post('http://nexpro.co/index.php/bsyl/client/addgold', signGamePack({userid:receiver, amount:(tmc_amount/10)}), (err, header, body)=>{
+				if (err) return callback(null, signTmc({result_code:'SYSTEMERROR', result_msg:err.message}));
+				try{
+					var ret=JSON.parse(body);
+				} catch(e) {return callback(null, signTmc({result_code:'SYSTEMERROR', result_msg:e.message}));}
+				if (ret.code!=0) return callback(null, signTmc({result_code:'SYSTEMERROR', result_msg:ret.msg}));
+				callback(null, signTmc({result_code:'SUCCESS'}, stdRet));
+			})
 		});
 	}));
 	function doPay(err, orderid, money, prefer) {
