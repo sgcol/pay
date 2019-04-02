@@ -91,13 +91,13 @@ getDB(function(err, db) {
 		db.tmclog.insert(this.req.body, {w:1}, (err)=>{
 			if (err) return callback(null, signTmc({result_code:'SYSTEMERROR', result_msg:err.message}));
 			request.post('http://nexpro.co/index.php/bsyl/client/addgold', {form:signGamePack({userid:receiver, amount:(tmc_amt/10)})}, (err, header, body)=>{
-				console.log(receiver, tmc_amt, JSON.parse(body));
 				if (err) return callback(null, signTmc({result_code:'SYSTEMERROR', result_msg:err.message}));
 				try{
 					var ret=JSON.parse(body);
 				} catch(e) {return callback(null, signTmc({result_code:'SYSTEMERROR', result_msg:e.message}));}
-				if (ret.code!=0) return callback(null, signTmc({result_code:'SYSTEMERROR', result_msg:ret.msg}));
-				callback(null, signTmc({result_code:'SUCCESS'}, stdRet));
+				if (ret.code==0) return callback(null, signTmc({result_code:'SUCCESS'}, stdRet));
+				else if (ret.code==-2) return callback(null, signTmc({result_code:'ACCOUNT_INVALID', result_msg:ret.msg}));
+				else return callback(null, signTmc({result_code:'INVALID_REQUEST', result_msg:ret.msg}));
 			})
 		});
 	}));
