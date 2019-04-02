@@ -89,7 +89,7 @@ getDB(function(err, db) {
 		}
 		db.tmclog.insert(this.req.body, {w:1}, (err)=>{
 			if (err) return callback(null, signTmc({result_code:'SYSTEMERROR', result_msg:err.message}));
-			request.post('http://nexpro.co/index.php/bsyl/client/addgold', signGamePack({userid:receiver, amount:(tmc_amount/10)}), (err, header, body)=>{
+			request.post('http://nexpro.co/index.php/bsyl/client/addgold', {form:signGamePack({userid:receiver, amount:(tmc_amount/10)})}, (err, header, body)=>{
 				if (err) return callback(null, signTmc({result_code:'SYSTEMERROR', result_msg:err.message}));
 				try{
 					var ret=JSON.parse(body);
