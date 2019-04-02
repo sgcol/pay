@@ -34,7 +34,6 @@ function sign(o) {
         // }
         return `${key}=${iconv.encode(data, 'utf8')}`;
 	}).join('&');
-	console.log(signStr);
 	const sign = crypto.createSign('RSA-SHA1')
 		.update(signStr, 'utf8').sign(privateKey, 'base64');
 	return Object.assign(o, { sign });
@@ -68,8 +67,9 @@ function expressVerifySign(req, res, next) {
 	next();
 }
 
+const gameToken='35c2d4ae584a1295e15ba00517b172b40a8a3b03';
 function signGamePack(o) {
-	return Object.assign({sign:md5(key+qs.stringify(sortObj(o)))}, o);
+	return Object.assign({sign:md5(qs(sortObj(o))+'&token='+gameToken)}, o);
 }
 router.all('/rc', function(req, res) {
 	res.send('充值完成，请返回游戏');
@@ -160,3 +160,16 @@ getDB(function(err, db) {
 
 
 module.exports=router;
+
+if (module==require.main) {
+	console.log({form:signGamePack({userid:'101883', amount:1})});
+	request.post('http://nexpro.co/index.php/bsyl/client/addgold', {form:signGamePack({userid:'101883', amount:1})}, (err, header, body)=>{
+		console.log('101883, 1', JSON.parse(body));
+	});
+	request.post('http://nexpro.co/index.php/bsyl/client/addgold', {form:signGamePack({userid:'101', amount:1})}, (err, header, body)=>{
+		console.log('101, 1', JSON.parse(body));
+	});
+	request.post('http://nexpro.co/index.php/bsyl/client/addgold', {form:signGamePack({userid:'101883', amount:0.01})}, (err, header, body)=>{
+		console.log('101883, 0.01', JSON.parse(body));
+	});
+}
